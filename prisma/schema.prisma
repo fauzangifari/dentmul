@@ -1,13 +1,149 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
+// DentMul — Prisma Schema v1.0
+// Sistem Skrining Awal Teledentistry RSGM Universitas Mulawarman
 
 generator client {
   provider = "prisma-client"
-  output   = "../app/generated/prisma"
+  output   = "./generated"
 }
 
 datasource db {
   provider = "postgresql"
+}
+
+// ============================================================
+// ENUMS
+// ============================================================
+
+enum Role {
+  PASIEN
+  KOAS
+  ADMIN
+}
+
+enum JenisKelamin {
+  LAKI_LAKI
+  PEREMPUAN
+}
+
+enum StatusSkrining {
+  MENUNGGU  // baru dikirim pasien, belum ditinjau koas
+  DITINJAU  // sudah dibuka koas
+  SELESAI   // sudah diberi edukasi
+}
+
+// ============================================================
+// MODELS
+// ============================================================
+
+model User {
+  id            String        @id @default(cuid())
+  name          String
+  email         String        @unique
+  password      String?       // Opsional karena user Google tidak punya password
+  emailVerified DateTime?     // Auth.js requirement
+  image         String?       // Auth.js requirement (foto profil Google)
+  role          Role          @default(PASIEN)
+  isActive      Boolean       @default(true)  // soft-delete: user nonaktif tidak bisa login
+
+  // Data Demografis Pasien (nullable — tidak wajib untuk role KOAS)
+  nik          String?       @unique  // Nomor Induk Kependudukan 16 digit
+  jenisKelamin JenisKelamin?
+  alamat       String?
+  tanggalLahir DateTime?             // umur dihitung dinamis dari field ini
+
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  // Relasi
+  skrinings   Skrining[]    // pasien → banyak skrining
+  kasusKoas   KasusPasien[] // koas → banyak kasus yang ditangani
+  edukasiKoas Edukasi[]     // koas → banyak edukasi yang dikirim
+
+  // Auth.js Relations
+  sessions    Session[]
+}
+
+model Skrining {
+  id     String @id @default(cuid())
+  userId String
+
+  // Data Keluhan (Anamnesa)
+  keluhanUtama    String
+  keluhanTambahan String?
+  durasiKeluhan   String  // contoh: "3 hari", "1 minggu"
+  lokasiSakit     String? // contoh: "Rahang kanan atas"
+  skalaNyeri      Int?    // Skala nyeri 1–10 (Visual Analogue Scale)
+
+  // Riwayat Medis (Medical History)
+  riwayatPenyakit String? // Jantung, Diabetes, Asma, dll — boleh kosong
+  alergiObat      String? // boleh kosong
+  obatRutin       String? // Obat yang sedang dikonsumsi saat ini
+  kebiasaanBuruk  String? // Merokok, alkohol, bruxism (menggeretakkan gigi), dll
+
+  // Status & Timestamps
+  status    StatusSkrining @default(MENUNGGU)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  // Relasi
+  user    User          @relation(fields: [userId], references: [id])
+  foto    FotoSkrining[]
+  kasus   KasusPasien?  // one-to-one, dibuat oleh koas
+  edukasi Edukasi?      // one-to-one, dikirim oleh koas
+}
+
+model FotoSkrining {
+  id         String   @id @default(cuid())
+  skriningId String
+  url        String   // URL publik dari Uploadthing / Supabase Storage
+  key        String   // Storage key — dipakai untuk delete foto
+  createdAt  DateTime @default(now())
+
+  // Relasi — cascade delete: jika skrining dihapus, foto ikut terhapus
+  skrining Skrining @relation(fields: [skriningId], references: [id], onDelete: Cascade)
+}
+
+model KasusPasien {
+  id         String  @id @default(cuid())
+  skriningId String  @unique
+  koasId     String
+
+  // Menggunakan String (bukan Enum) agar kategori bisa ditambah secara fleksibel
+  // tanpa perlu migrasi database. Preset pilihan dikelola di sisi frontend.
+  // Contoh nilai: "Karies", "Periodontal", "Oral Hygiene", "Sakit Gigi", dll.
+  kategori    String  @default("Lainnya")
+  isPotensial Boolean @default(false)
+  catatan     String? // Catatan internal koas — tidak terlihat oleh pasien
+
+  updatedAt DateTime @updatedAt
+
+  // Relasi
+  skrining Skrining @relation(fields: [skriningId], references: [id])
+  koas     User     @relation(fields: [koasId], references: [id])
+}
+
+model Edukasi {
+  id         String   @id @default(cuid())
+  skriningId String   @unique
+  koasId     String
+  konten     String   // Teks edukasi / rekomendasi yang dikirim ke pasien
+  createdAt  DateTime @default(now())
+
+  // Relasi
+  skrining Skrining @relation(fields: [skriningId], references: [id])
+  koas     User     @relation(fields: [koasId], references: [id])
+}
+
+// ============================================================
+// NEXTAUTH (AUTH.JS) MODELS
+// ============================================================
+ 
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique @map("session_token")
+  userId       String   @map("user_id")
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+ 
+  @@map("sessions")
 }
