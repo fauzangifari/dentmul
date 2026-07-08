@@ -8,7 +8,8 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-mono: var(--font-mono);
+  --font-display: var(--font-display);
   --font-heading: var(--font-sans);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
@@ -29,6 +30,8 @@
   --color-destructive: var(--destructive);
   --color-accent-foreground: var(--accent-foreground);
   --color-accent: var(--accent);
+  --color-human: var(--human);
+  --color-human-soft: var(--human-soft);
   --color-muted-foreground: var(--muted-foreground);
   --color-muted: var(--muted);
   --color-secondary-foreground: var(--secondary-foreground);
@@ -39,6 +42,7 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
+
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -46,75 +50,112 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+
+  /* Premium, brand-tinted elevation. Overrides Tailwind's default shadow
+     scale so every shadow-* utility already looks on-brand. */
+  --shadow-2xs: 0 1px 2px 0 var(--shadow-tint-weak);
+  --shadow-xs: 0 1px 2px 0 var(--shadow-tint-weak);
+  --shadow-sm: 0 1px 2px 0 var(--shadow-tint-weak), 0 2px 6px -1px var(--shadow-tint);
+  --shadow: 0 1px 3px 0 var(--shadow-tint-weak), 0 4px 12px -2px var(--shadow-tint);
+  --shadow-md: 0 2px 6px -1px var(--shadow-tint-weak), 0 8px 20px -4px var(--shadow-tint);
+  --shadow-lg: 0 8px 16px -6px var(--shadow-tint), 0 20px 32px -12px var(--shadow-tint-strong);
+  --shadow-xl: 0 12px 24px -8px var(--shadow-tint), 0 32px 48px -16px var(--shadow-tint-strong);
 }
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --radius: 0.75rem;
+
+  /* ---- Clean clinical (light) ---- */
+  --background: #f4f7fd;
+  --foreground: #0b1f52;
+  --card: #ffffff;
+  --card-foreground: #0b1f52;
+  --popover: #ffffff;
+  --popover-foreground: #0b1f52;
+  --primary: #334eac;
+  --primary-foreground: #ffffff;
+  --secondary: #7096d1;
+  --secondary-foreground: #ffffff;
+  --muted: #eaf1fb;
+  --muted-foreground: #64749b;
+  --accent: #e8f1fe;
+  --accent-foreground: #23387e;
+  --destructive: #e0313b;
+  --border: #e3eaf5;
+  --input: #d7e1f0;
+  --ring: #334eac;
+
+  /* warm accent kept from brand for occasional highlights */
+  --warm: #f7f2eb;
+
+  /* the single warm accent — reserved for the human "koas reviewing" moment,
+     the point where care comes back down the signal */
+  --human: #e08a1e;
+  --human-soft: #fbe8d3;
+
+  --shadow-tint-weak: color-mix(in srgb, #081f5c 5%, transparent);
+  --shadow-tint: color-mix(in srgb, #081f5c 9%, transparent);
+  --shadow-tint-strong: color-mix(in srgb, #081f5c 14%, transparent);
+
+  --chart-1: #334eac;
+  --chart-2: #7096d1;
+  --chart-3: #34b39a;
+  --chart-4: #f0a02c;
+  --chart-5: #e0313b;
+
+  --sidebar: #ffffff;
+  --sidebar-foreground: #0b1f52;
+  --sidebar-primary: #334eac;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #e8f1fe;
+  --sidebar-accent-foreground: #23387e;
+  --sidebar-border: #e3eaf5;
+  --sidebar-ring: #334eac;
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  /* ---- On-brand deep navy (dark) ---- */
+  --background: #060c1f;
+  --foreground: #e9eef9;
+  --card: #0d1732;
+  --card-foreground: #e9eef9;
+  --popover: #0d1732;
+  --popover-foreground: #e9eef9;
+  --primary: #6e8fe6;
+  --primary-foreground: #06122e;
+  --secondary: #1b2a50;
+  --secondary-foreground: #e9eef9;
+  --muted: #16224a;
+  --muted-foreground: #93a4c7;
+  --accent: #1b2a50;
+  --accent-foreground: #e9eef9;
+  --destructive: #f2565f;
+  --border: color-mix(in srgb, #ffffff 9%, transparent);
+  --input: color-mix(in srgb, #ffffff 14%, transparent);
+  --ring: #6e8fe6;
+
+  --warm: #1a2444;
+  --human: #f0a94a;
+  --human-soft: #3a2a12;
+
+  --shadow-tint-weak: color-mix(in srgb, #000000 30%, transparent);
+  --shadow-tint: color-mix(in srgb, #000000 40%, transparent);
+  --shadow-tint-strong: color-mix(in srgb, #000000 55%, transparent);
+
+  --chart-1: #6e8fe6;
+  --chart-2: #7096d1;
+  --chart-3: #3fd0b3;
+  --chart-4: #f4b350;
+  --chart-5: #f2565f;
+
+  --sidebar: #0a1128;
+  --sidebar-foreground: #e9eef9;
+  --sidebar-primary: #6e8fe6;
+  --sidebar-primary-foreground: #06122e;
+  --sidebar-accent: #1b2a50;
+  --sidebar-accent-foreground: #e9eef9;
+  --sidebar-border: color-mix(in srgb, #ffffff 9%, transparent);
+  --sidebar-ring: #6e8fe6;
 }
 
 @layer base {
@@ -123,8 +164,103 @@
   }
   body {
     @apply bg-background text-foreground;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
   }
   html {
     @apply font-sans;
+    scroll-behavior: smooth;
+    color-scheme: light;
+  }
+  html.dark {
+    color-scheme: dark;
+  }
+  ::selection {
+    background: color-mix(in srgb, var(--primary) 22%, transparent);
+  }
+}
+
+@layer utilities {
+  /* ---- The Signal ---- the concentric-wave motif from the DentMul mark,
+     used for the hero transmission and the status pipeline spine. */
+  .font-display {
+    font-family: var(--font-display);
+    font-optical-sizing: auto;
+  }
+
+  @keyframes signal-emit {
+    0% {
+      transform: scale(0.35);
+      opacity: 0;
+    }
+    18% {
+      opacity: 0.9;
+    }
+    100% {
+      transform: scale(1);
+      opacity: 0;
+    }
+  }
+  .signal-ring {
+    animation: signal-emit 3.6s cubic-bezier(0.16, 0.84, 0.44, 1) infinite;
+  }
+
+  @keyframes signal-rise {
+    from {
+      opacity: 0;
+      transform: translateY(14px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  .signal-rise {
+    animation: signal-rise 0.7s cubic-bezier(0.16, 0.84, 0.44, 1) both;
+  }
+
+  @keyframes track-advance {
+    from {
+      width: 0%;
+    }
+  }
+  .track-fill {
+    animation: track-advance 1.6s cubic-bezier(0.65, 0, 0.35, 1) 0.5s both;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .signal-ring,
+    .signal-rise,
+    .track-fill {
+      animation: none;
+    }
+  }
+
+  /* iOS safe-area padding for the mobile tab bar */
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .h-safe-nav {
+    height: calc(4rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  /* Refined, subtle scrollbars for the app shell */
+  .scrollbar-slim {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in srgb, var(--muted-foreground) 40%, transparent)
+      transparent;
+  }
+  .scrollbar-slim::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  .scrollbar-slim::-webkit-scrollbar-thumb {
+    background-color: color-mix(in srgb, var(--muted-foreground) 30%, transparent);
+    border-radius: 9999px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
+  .scrollbar-slim::-webkit-scrollbar-thumb:hover {
+    background-color: color-mix(in srgb, var(--muted-foreground) 55%, transparent);
   }
 }
