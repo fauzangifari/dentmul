@@ -63,19 +63,19 @@ export default async function KoasDashboard({
           Selamat datang, {firstName} 👋
         </h1>
         <p className="mt-1.5 text-muted-foreground">
-          {stats.menunggu > 0
-            ? `Ada ${stats.menunggu} pasien menunggu ditinjau hari ini.`
-            : "Semua pasien sudah ditangani. Kerja bagus! 🎉"}
+          {stats.perluTindakan > 0
+            ? `Ada ${stats.perluTindakan} kasus yang perlu Anda tangani hari ini.`
+            : "Semua kasus sudah ditangani. Kerja bagus! 🎉"}
         </p>
       </div>
 
       <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
         {/* Perlu Ditinjau — primary emphasis */}
         <Link
-          href="/koas/dashboard?status=MENUNGGU"
+          href="/koas/dashboard?status=PERLU"
           className={cn(
             "group relative col-span-2 overflow-hidden rounded-2xl bg-gradient-to-br from-primary to-[#23387e] p-5 text-primary-foreground shadow-md transition-transform hover:-translate-y-0.5 sm:col-span-1",
-            activeStatus === "MENUNGGU" && "ring-2 ring-primary ring-offset-2 ring-offset-background"
+            activeStatus === "PERLU" && "ring-2 ring-primary ring-offset-2 ring-offset-background"
           )}
         >
           <div
@@ -95,7 +95,7 @@ export default async function KoasDashboard({
           <p className="relative mt-4 text-sm font-medium text-primary-foreground/80">
             Perlu Ditinjau
           </p>
-          <p className="relative text-4xl font-bold tabular-nums">{stats.menunggu}</p>
+          <p className="relative text-4xl font-bold tabular-nums">{stats.perluTindakan}</p>
         </Link>
 
         <StatCard

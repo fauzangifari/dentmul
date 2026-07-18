@@ -13,7 +13,10 @@ export default async function PasienDashboard() {
     await Promise.all([
       db.skrining.count({ where: { userId: session?.user?.id } }),
       db.skrining.count({
-        where: { userId: session?.user?.id, status: { in: ["MENUNGGU", "DITINJAU"] } },
+        where: {
+          userId: session?.user?.id,
+          status: { in: ["MENUNGGU", "DITINJAU", "MENUNGGU_ACC"] },
+        },
       }),
       db.skrining.count({
         where: { userId: session?.user?.id, status: "SELESAI" },

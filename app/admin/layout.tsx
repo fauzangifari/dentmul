@@ -1,5 +1,4 @@
-import { auth } from "@/auth";
-import { redirect } from "next/navigation";
+import { requireUserOrRedirect } from "@/lib/auth-guard";
 import { logoutUser } from "@/features/auth/actions";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 
@@ -8,17 +7,13 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const session = await auth();
-
-  if (!session || session.user.role !== "ADMIN") {
-    redirect("/login");
-  }
+  const user = await requireUserOrRedirect("ADMIN");
 
   return (
     <DashboardShell
       variant="admin"
       subtitle="Portal Admin"
-      user={{ name: session.user.name ?? "Admin", meta: session.user.email ?? "" }}
+      user={{ name: user.name ?? "Admin", meta: user.email ?? "" }}
       logoutAction={logoutUser}
     >
       {children}

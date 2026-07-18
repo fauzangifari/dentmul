@@ -33,6 +33,19 @@ async function main() {
   })
   console.log(`✅ Koas created: ${koas.email}`)
 
+  // Buat akun DOSEN (penyetuju edukasi koas)
+  const dosen = await prisma.user.upsert({
+    where: { email: 'dosen@dentmul.id' },
+    update: {},
+    create: {
+      name: 'Dr. Sari Dosen',
+      email: 'dosen@dentmul.id',
+      password: hashedPassword,
+      role: 'DOSEN',
+    },
+  })
+  console.log(`✅ Dosen created: ${dosen.email}`)
+
   // Buat akun PASIEN
   const pasien = await prisma.user.upsert({
     where: { email: 'pasien@dentmul.id' },
@@ -89,6 +102,7 @@ async function main() {
   console.log('Akun tersedia:')
   console.log('  Pasien → pasien@dentmul.id / password123')
   console.log('  Koas   → koas@dentmul.id / password123')
+  console.log('  Dosen  → dosen@dentmul.id / password123')
   console.log('  Admin  → admin@dentmul.id / password123')
 }
 

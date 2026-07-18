@@ -3,7 +3,7 @@ export type AdminUserItem = {
   id: string;
   name: string;
   email: string;
-  role: "PASIEN" | "KOAS" | "ADMIN";
+  role: "PASIEN" | "KOAS" | "DOSEN" | "ADMIN";
   isActive: boolean;
   nik: string | null;
   jenisKelamin: "LAKI_LAKI" | "PEREMPUAN" | null;

@@ -17,6 +17,7 @@ datasource db {
 enum Role {
   PASIEN
   KOAS
+  DOSEN
   ADMIN
 }
 
@@ -26,9 +27,10 @@ enum JenisKelamin {
 }
 
 enum StatusSkrining {
-  MENUNGGU  // baru dikirim pasien, belum ditinjau koas
-  DITINJAU  // sudah dibuka koas
-  SELESAI   // sudah diberi edukasi
+  MENUNGGU      // baru dikirim pasien, belum ditinjau koas
+  DITINJAU      // sudah dibuka koas
+  MENUNGGU_ACC  // koas sudah kirim edukasi, menunggu ACC dosen
+  SELESAI       // sudah di-ACC dosen, edukasi terlihat pasien
 }
 
 // ============================================================
@@ -50,14 +52,16 @@ model User {
   jenisKelamin JenisKelamin?
   alamat       String?
   tanggalLahir DateTime?             // umur dihitung dinamis dari field ini
+  noTelepon    String?              // Nomor telepon/HP pasien untuk kontak
 
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
 
   // Relasi
-  skrinings   Skrining[]    // pasien → banyak skrining
-  kasusKoas   KasusPasien[] // koas → banyak kasus yang ditangani
-  edukasiKoas Edukasi[]     // koas → banyak edukasi yang dikirim
+  skrinings    Skrining[]    // pasien → banyak skrining
+  kasusKoas    KasusPasien[] // koas → banyak kasus yang ditangani
+  edukasiKoas  Edukasi[]     @relation("EdukasiKoas")  // koas → banyak edukasi yang dikirim
+  edukasiDiacc Edukasi[]     @relation("EdukasiDosen") // dosen → banyak edukasi yang di-ACC
 
   // Auth.js Relations
   sessions    Session[]
@@ -129,9 +133,15 @@ model Edukasi {
   konten     String   // Teks edukasi / rekomendasi yang dikirim ke pasien
   createdAt  DateTime @default(now())
 
+  // Persetujuan (ACC) oleh dosen — edukasi baru terlihat pasien setelah di-ACC
+  dosenId      String?   // dosen yang meng-ACC / menolak
+  catatanDosen String?   // alasan penolakan (opsional) — juga penanda pernah ditolak
+  reviewedAt   DateTime? // waktu dosen memproses (ACC / tolak)
+
   // Relasi
   skrining Skrining @relation(fields: [skriningId], references: [id])
-  koas     User     @relation(fields: [koasId], references: [id])
+  koas     User     @relation("EdukasiKoas", fields: [koasId], references: [id])
+  dosen    User?    @relation("EdukasiDosen", fields: [dosenId], references: [id])
 }
 
 // ============================================================

@@ -7,9 +7,15 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 interface PaginationControlsProps {
   page: number;
   totalPages: number;
+  /** Rute dasar untuk query pagination. Dosen memakai "/dosen/dashboard". */
+  basePath?: string;
 }
 
-export function PaginationControls({ page, totalPages }: PaginationControlsProps) {
+export function PaginationControls({
+  page,
+  totalPages,
+  basePath = "/koas/dashboard",
+}: PaginationControlsProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -20,7 +26,7 @@ export function PaginationControls({ page, totalPages }: PaginationControlsProps
     } else {
       params.set("page", String(targetPage));
     }
-    router.push(`/koas/dashboard?${params.toString()}`);
+    router.push(`${basePath}?${params.toString()}`);
   }
 
   return (

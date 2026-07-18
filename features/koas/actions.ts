@@ -1,11 +1,15 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { auth } from "@/auth";
+import { getVerifiedUser, requireUserOrThrow } from "@/lib/auth-guard";
 import { revalidatePath } from "next/cache";
 import { Prisma } from "@/prisma/generated/client";
 import { PAGE_SIZE } from "@/features/koas/constants";
-import { TinjauanSchema } from "@/features/koas/schema";
+import {
+  TinjauanSchema,
+  UpdateKoasProfileSchema,
+  type UpdateKoasProfileInput,
+} from "@/features/koas/schema";
 
 export type SkriningListParams = {
   search?: string;
@@ -15,10 +19,7 @@ export type SkriningListParams = {
 };
 
 export async function getSkriningList(params: SkriningListParams = {}) {
-  const session = await auth();
-  if (!session || session.user.role !== "KOAS") {
-    throw new Error("Unauthorized");
-  }
+  await requireUserOrThrow("KOAS");
 
   const search = params.search?.trim() ?? "";
   const kategori = params.kategori?.trim() ?? "";
@@ -34,7 +35,14 @@ export async function getSkriningList(params: SkriningListParams = {}) {
     ];
   }
 
-  if (status && ["MENUNGGU", "DITINJAU", "SELESAI"].includes(status)) {
+  if (status === "PERLU") {
+    // Pseudo-filter kartu "Perlu Ditinjau": kasus yang butuh aksi koas —
+    // belum ditinjau (MENUNGGU) atau dikembalikan dosen untuk revisi (DITINJAU).
+    where.status = { in: ["MENUNGGU", "DITINJAU"] };
+  } else if (
+    status &&
+    ["MENUNGGU", "DITINJAU", "MENUNGGU_ACC", "SELESAI"].includes(status)
+  ) {
     where.status = status as Prisma.SkriningWhereInput["status"];
   }
 
@@ -68,10 +76,7 @@ export async function getSkriningList(params: SkriningListParams = {}) {
 }
 
 export async function getSkriningStats() {
-  const session = await auth();
-  if (!session || session.user.role !== "KOAS") {
-    throw new Error("Unauthorized");
-  }
+  await requireUserOrThrow("KOAS");
 
   const [grouped, mendesak] = await Promise.all([
     db.skrining.groupBy({ by: ["status"], _count: { _all: true } }),
@@ -82,22 +87,31 @@ export async function getSkriningStats() {
 
   const byStatus = Object.fromEntries(
     grouped.map((g) => [g.status, g._count._all])
-  ) as Partial<Record<"MENUNGGU" | "DITINJAU" | "SELESAI", number>>;
+  ) as Partial<
+    Record<"MENUNGGU" | "DITINJAU" | "MENUNGGU_ACC" | "SELESAI", number>
+  >;
 
   const menunggu = byStatus.MENUNGGU ?? 0;
+  const ditinjau = byStatus.DITINJAU ?? 0;
   const selesai = byStatus.SELESAI ?? 0;
   const total = grouped.reduce((sum, g) => sum + g._count._all, 0);
 
-  return { total, menunggu, selesai, mendesak };
+  // Kasus yang butuh aksi koas = belum ditinjau (MENUNGGU) + sudah dibuka /
+  // dikembalikan dosen untuk direvisi (DITINJAU). DITINJAU sebelumnya tidak
+  // terhitung di tile mana pun sehingga kasus revisi "hilang" dari dashboard.
+  const perluTindakan = menunggu + ditinjau;
+
+  return { total, menunggu, ditinjau, perluTindakan, selesai, mendesak };
 }
 
+// Murni-baca. Transisi MENUNGGU → DITINJAU TIDAK dilakukan di sini: menulis DB
+// saat render Server Component membuat GET non-idempoten (prefetch/re-render
+// memicu write) dan mengunci kasus hanya karena dibuka. Transisi dipindah ke
+// action eksplisit `mulaiTinjauKasus` yang dipicu tombol koas.
 export async function getKasusDetail(id: string) {
-  const session = await auth();
-  if (!session || session.user.role !== "KOAS") {
-    throw new Error("Unauthorized");
-  }
+  await requireUserOrThrow("KOAS");
 
-  const skrining = await db.skrining.findUnique({
+  return db.skrining.findUnique({
     where: { id },
     include: {
       user: {
@@ -107,6 +121,7 @@ export async function getKasusDetail(id: string) {
           jenisKelamin: true,
           nik: true,
           alamat: true,
+          noTelepon: true,
         },
       },
       foto: true,
@@ -114,19 +129,25 @@ export async function getKasusDetail(id: string) {
       edukasi: true,
     },
   });
+}
 
-  // Saat koas membuka kasus yang masih MENUNGGU, tandai sebagai DITINJAU.
-  // Tidak memanggil revalidatePath (dilarang saat render Server Component di
-  // Next 16); dashboard koas sudah force-dynamic sehingga query ulang otomatis.
-  if (skrining && skrining.status === "MENUNGGU") {
-    await db.skrining.update({
-      where: { id },
-      data: { status: "DITINJAU" },
-    });
-    skrining.status = "DITINJAU";
-  }
+/**
+ * Tandai kasus mulai ditinjau (MENUNGGU → DITINJAU). Dipicu tombol "Mulai
+ * Tinjau" oleh koas. Idempoten: memakai updateMany bersyarat status, sehingga
+ * pemanggilan pada kasus non-MENUNGGU tidak berefek (0 baris) dan aman diulang.
+ */
+export async function mulaiTinjauKasus(skriningId: string) {
+  const koas = await getVerifiedUser("KOAS");
+  if (!koas) return { error: "Unauthorized" };
 
-  return skrining;
+  await db.skrining.updateMany({
+    where: { id: skriningId, status: "MENUNGGU" },
+    data: { status: "DITINJAU" },
+  });
+
+  revalidatePath(`/koas/kasus/${skriningId}`);
+  revalidatePath("/koas/dashboard");
+  return { success: true };
 }
 
 export async function submitTinjauan({
@@ -142,13 +163,9 @@ export async function submitTinjauan({
   catatan?: string;
   edukasiKonten: string;
 }) {
-  const session = await auth();
-  if (!session || session.user.role !== "KOAS") {
-    throw new Error("Unauthorized");
-  }
-
-  const koasId = session.user.id;
-  if (!koasId) throw new Error("User ID is missing from session");
+  const koas = await getVerifiedUser("KOAS");
+  if (!koas) return { error: "Unauthorized" };
+  const koasId = koas.id;
 
   // Validasi sisi-server (defense-in-depth atas validasi form klien)
   const parsed = TinjauanSchema.safeParse({
@@ -159,55 +176,112 @@ export async function submitTinjauan({
     edukasiKonten,
   });
   if (!parsed.success) {
-    throw new Error("Input tinjauan tidak valid");
+    return { error: "Input tinjauan tidak valid" };
   }
 
-  // Transaksi agar konsisten
-  await db.$transaction(async (tx) => {
-    // 1. Buat / update KasusPasien
-    await tx.kasusPasien.upsert({
-      where: { skriningId },
-      update: {
-        kategori,
-        isPotensial,
-        catatan,
-        koasId,
-      },
-      create: {
-        skriningId,
-        koasId,
-        kategori,
-        isPotensial,
-        catatan,
-      },
-    });
+  try {
+    // Transaksi agar konsisten
+    await db.$transaction(async (tx) => {
+      // 1. Guard status DI DALAM transaksi: hanya kasus MENUNGGU / DITINJAU
+      // yang boleh dikirim. updateMany bersyarat status menutup baik race
+      // check-then-act maupun POST langsung ke kasus SELESAI/MENUNGGU_ACC —
+      // mencegah koas menarik kembali edukasi yang sudah di-ACC dosen atau
+      // mencuri kasus koas lain. Bila 0 baris cocok, batalkan transaksi.
+      const updated = await tx.skrining.updateMany({
+        where: { id: skriningId, status: { in: ["MENUNGGU", "DITINJAU"] } },
+        data: { status: "MENUNGGU_ACC" },
+      });
+      if (updated.count === 0) {
+        throw new Error("STATUS_INVALID");
+      }
 
-    // 2. Buat / update Edukasi
-    if (edukasiKonten) {
-      await tx.edukasi.upsert({
+      // 2. Buat / update KasusPasien
+      await tx.kasusPasien.upsert({
         where: { skriningId },
         update: {
-          konten: edukasiKonten,
+          kategori,
+          isPotensial,
+          catatan,
           koasId,
         },
         create: {
           skriningId,
           koasId,
-          konten: edukasiKonten,
+          kategori,
+          isPotensial,
+          catatan,
         },
       });
-    }
 
-    // 3. Update status skrining
-    await tx.skrining.update({
-      where: { id: skriningId },
-      data: {
-        status: "SELESAI",
-      },
+      // 3. Buat / update Edukasi.
+      // Reset field ACC agar pengiriman ulang (setelah ditolak dosen) bersih —
+      // kembali ke keadaan "menunggu ACC" tanpa jejak review sebelumnya.
+      if (edukasiKonten) {
+        await tx.edukasi.upsert({
+          where: { skriningId },
+          update: {
+            konten: edukasiKonten,
+            koasId,
+            dosenId: null,
+            catatanDosen: null,
+            reviewedAt: null,
+          },
+          create: {
+            skriningId,
+            koasId,
+            konten: edukasiKonten,
+          },
+        });
+      }
     });
-  });
+  } catch (error) {
+    if (error instanceof Error && error.message === "STATUS_INVALID") {
+      return {
+        error:
+          "Kasus ini tidak dapat dikirim ulang — mungkin sudah menunggu ACC atau telah disetujui dosen.",
+      };
+    }
+    console.error("submitTinjauan Error:", error);
+    return { error: "Terjadi kesalahan pada server." };
+  }
 
   revalidatePath(`/koas/kasus/${skriningId}`);
   revalidatePath("/koas/dashboard");
   return { success: true };
+}
+
+/**
+ * Update profil milik koas yang sedang login.
+ *
+ * Guard keamanan (Server Actions bisa dipanggil via POST langsung, bukan hanya
+ * lewat UI): wajib sesi KOAS, dan update SELALU menargetkan `session.user.id`
+ * — id tidak pernah diterima dari client. Hanya name & noTelepon yang ditulis;
+ * email/role/isActive tidak pernah disentuh. Mengembalikan objek { error } /
+ * { success } (bukan throw) agar form klien bisa menampilkan toast.
+ */
+export async function updateOwnKoasProfile(values: UpdateKoasProfileInput) {
+  try {
+    const koas = await getVerifiedUser("KOAS");
+    if (!koas) {
+      return { error: "Unauthorized" };
+    }
+
+    const parsed = UpdateKoasProfileSchema.safeParse(values);
+    if (!parsed.success) {
+      return { error: parsed.error.issues[0]?.message ?? "Data tidak valid!" };
+    }
+
+    const { name, noTelepon } = parsed.data;
+
+    await db.user.update({
+      where: { id: koas.id },
+      data: { name, noTelepon },
+    });
+
+    revalidatePath("/koas/profil");
+    return { success: "Profil berhasil diperbarui!" };
+  } catch (error) {
+    console.error("updateOwnKoasProfile Error:", error);
+    return { error: "Terjadi kesalahan pada server." };
+  }
 }

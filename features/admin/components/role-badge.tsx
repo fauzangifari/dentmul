@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { ShieldCheck, Stethoscope, User } from "lucide-react";
+import { ShieldCheck, Stethoscope, GraduationCap, User } from "lucide-react";
 
 type RoleConfig = {
   label: string;
@@ -20,6 +20,12 @@ const ROLE_CONFIG: Record<string, RoleConfig> = {
     icon: Stethoscope,
     bgClass: "bg-blue-100 dark:bg-blue-500/10",
     textClass: "text-blue-700 dark:text-blue-400",
+  },
+  DOSEN: {
+    label: "Dosen",
+    icon: GraduationCap,
+    bgClass: "bg-violet-100 dark:bg-violet-500/10",
+    textClass: "text-violet-700 dark:text-violet-400",
   },
   PASIEN: {
     label: "Pasien",

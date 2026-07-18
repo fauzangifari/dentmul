@@ -1,7 +1,7 @@
-import { Clock, Eye, CheckCircle2, HelpCircle } from "lucide-react";
+import { Clock, Eye, Hourglass, CheckCircle2, HelpCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export type SkriningStatus = "MENUNGGU" | "DITINJAU" | "SELESAI";
+export type SkriningStatus = "MENUNGGU" | "DITINJAU" | "MENUNGGU_ACC" | "SELESAI";
 
 interface StatusBadgeProps {
   status: SkriningStatus | string;
@@ -23,6 +23,12 @@ const STATUS_CONFIG: Record<
     icon: Eye,
     bgClass: "bg-blue-100 dark:bg-blue-500/10",
     textClass: "text-blue-700 dark:text-blue-500",
+  },
+  MENUNGGU_ACC: {
+    label: "Menunggu ACC",
+    icon: Hourglass,
+    bgClass: "bg-violet-100 dark:bg-violet-500/10",
+    textClass: "text-violet-700 dark:text-violet-400",
   },
   SELESAI: {
     label: "Selesai",

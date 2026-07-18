@@ -71,7 +71,14 @@ function Identity({ s }: { s: KasusItem }) {
   );
 }
 
-export function KasusTable({ items }: { items: KasusItem[] }) {
+export function KasusTable({
+  items,
+  basePath = "/koas/kasus",
+}: {
+  items: KasusItem[];
+  /** Prefix rute detail kasus. Dosen memakai "/dosen/kasus". */
+  basePath?: string;
+}) {
   const router = useRouter();
 
   return (
@@ -108,7 +115,7 @@ export function KasusTable({ items }: { items: KasusItem[] }) {
               return (
                 <tr
                   key={s.id}
-                  onClick={() => router.push(`/koas/kasus/${s.id}`)}
+                  onClick={() => router.push(`${basePath}/${s.id}`)}
                   className="group cursor-pointer border-b border-border/60 transition-colors last:border-0 hover:bg-accent/50"
                 >
                   <td className="relative py-3.5 pr-4 pl-5">
@@ -169,7 +176,7 @@ export function KasusTable({ items }: { items: KasusItem[] }) {
             <button
               key={s.id}
               type="button"
-              onClick={() => router.push(`/koas/kasus/${s.id}`)}
+              onClick={() => router.push(`${basePath}/${s.id}`)}
               className={cn(
                 "relative block w-full overflow-hidden rounded-2xl border bg-card p-4 text-left shadow-sm transition-all active:scale-[0.99]",
                 urgent ? "border-destructive/30" : "border-border"

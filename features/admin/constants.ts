@@ -3,6 +3,7 @@ export const PAGE_SIZE = 10
 export const ROLE_OPTIONS = [
   { value: "PASIEN", label: "Pasien" },
   { value: "KOAS", label: "Koas" },
+  { value: "DOSEN", label: "Dosen" },
   { value: "ADMIN", label: "Admin" },
 ] as const
 

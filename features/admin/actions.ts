@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { auth } from "@/auth";
+import { requireUserOrThrow } from "@/lib/auth-guard";
 import { revalidatePath } from "next/cache";
 import { Prisma } from "@/prisma/generated/client";
 import bcrypt from "bcryptjs";
@@ -16,15 +16,12 @@ import {
 } from "@/features/admin/schema";
 
 /**
- * Guard: hanya ADMIN. Melempar Error agar dipakai action baca yang
- * dipanggil langsung dari Server Component (mirror pola features/koas).
+ * Guard: hanya ADMIN, terverifikasi ke DB (bukan hanya token — lihat
+ * lib/auth-guard.ts). Melempar Error agar dipakai action baca yang dipanggil
+ * langsung dari Server Component. Mengembalikan user ADMIN tepercaya.
  */
 async function requireAdmin() {
-  const session = await auth();
-  if (!session || session.user.role !== "ADMIN") {
-    throw new Error("Unauthorized");
-  }
-  return session;
+  return requireUserOrThrow("ADMIN");
 }
 
 export type UserListParams = {
@@ -52,7 +49,7 @@ export async function getUserList(params: UserListParams = {}) {
     ];
   }
 
-  if (role && ["PASIEN", "KOAS", "ADMIN"].includes(role)) {
+  if (role && ["PASIEN", "KOAS", "DOSEN", "ADMIN"].includes(role)) {
     where.role = role as Prisma.UserWhereInput["role"];
   }
 
@@ -98,12 +95,13 @@ export async function getUserStats() {
 
   const byRole = Object.fromEntries(
     grouped.map((g) => [g.role, g._count._all])
-  ) as Partial<Record<"PASIEN" | "KOAS" | "ADMIN", number>>;
+  ) as Partial<Record<"PASIEN" | "KOAS" | "DOSEN" | "ADMIN", number>>;
 
   return {
     total,
     pasien: byRole.PASIEN ?? 0,
     koas: byRole.KOAS ?? 0,
+    dosen: byRole.DOSEN ?? 0,
     admin: byRole.ADMIN ?? 0,
     active: total - inactive,
     inactive,
@@ -155,7 +153,7 @@ export async function createUser(values: CreateUserInput) {
 
 export async function updateUser(id: string, values: UpdateUserInput) {
   try {
-    const session = await requireAdmin();
+    const admin = await requireAdmin();
 
     const parsed = UpdateUserSchema.safeParse(values);
     if (!parsed.success) {
@@ -172,7 +170,7 @@ export async function updateUser(id: string, values: UpdateUserInput) {
     if (!target) return { error: "User tidak ditemukan." };
 
     // Safety: admin tidak boleh mengunci dirinya sendiri keluar.
-    if (session.user.id === id && (role !== "ADMIN" || !isActive)) {
+    if (admin.id === id && (role !== "ADMIN" || !isActive)) {
       return {
         error: "Anda tidak dapat menurunkan role atau menonaktifkan akun sendiri.",
       };
@@ -228,9 +226,9 @@ export async function updateUser(id: string, values: UpdateUserInput) {
 
 export async function setUserActive(id: string, isActive: boolean) {
   try {
-    const session = await requireAdmin();
+    const admin = await requireAdmin();
 
-    if (session.user.id === id && !isActive) {
+    if (admin.id === id && !isActive) {
       return { error: "Anda tidak dapat menonaktifkan akun sendiri." };
     }
 

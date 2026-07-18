@@ -12,6 +12,7 @@ export const authInputClass =
   "h-11 w-full rounded-xl border border-input bg-muted/40 pl-10 pr-3 text-sm text-foreground " +
   "placeholder:text-muted-foreground/60 transition-[background-color,border-color,box-shadow] duration-200 " +
   "focus:bg-card focus:outline-none focus:ring-3 focus:ring-ring/25 focus:border-ring " +
+  "aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 " +
   "disabled:cursor-not-allowed disabled:opacity-50"
 
 export function AuthField({

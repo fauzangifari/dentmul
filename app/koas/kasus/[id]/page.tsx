@@ -1,25 +1,26 @@
 import { getKasusDetail } from "@/features/koas/actions";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { format } from "date-fns";
-import { id as localeId } from "date-fns/locale";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { StatusBadge } from "@/features/skrining/components/status-badge";
-import { PhotoLightbox } from "@/features/skrining/components/photo-lightbox";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { KasusActionForm } from "@/features/koas/components/kasus-action-form";
-import { PainPill, PainBar } from "@/features/koas/components/pain-indicator";
-import { calculateAge } from "@/lib/utils";
-import { formatDistanceToNow } from "date-fns";
+import { MulaiTinjauButton } from "@/features/koas/components/mulai-tinjau-button";
+import {
+  KasusPatientInfo,
+  KasusSummaryStrip,
+} from "@/features/skrining/components/kasus-patient-info";
 import {
   ArrowLeft,
   User,
-  MessageCircle,
-  ClipboardList,
-  Images,
   Stethoscope,
-  AlertTriangle,
   CheckCircle2,
+  Hourglass,
+  XCircle,
   Star,
 } from "lucide-react";
 
@@ -30,7 +31,9 @@ export const metadata = {
 function Field({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div>
-      <span className="mb-1 block text-xs font-medium text-muted-foreground">{label}</span>
+      <span className="mb-1 block text-xs font-medium text-muted-foreground">
+        {label}
+      </span>
       <span className="font-semibold text-foreground">{value}</span>
     </div>
   );
@@ -53,6 +56,55 @@ function SectionHeader({
   );
 }
 
+/** Ringkasan tinjauan koas — dipakai di state read-only (menunggu ACC / selesai). */
+function TinjauanRingkasan({
+  kategori,
+  isPotensial,
+  catatan,
+  konten,
+}: {
+  kategori?: string;
+  isPotensial?: boolean;
+  catatan?: string | null;
+  konten?: string;
+}) {
+  return (
+    <>
+      <Field label="Kategori" value={kategori ?? "-"} />
+      <div>
+        <span className="mb-1 block text-xs font-medium text-muted-foreground">
+          Status Potensial
+        </span>
+        {isPotensial ? (
+          <Badge className="gap-1">
+            <Star size={12} /> Pasien Potensial
+          </Badge>
+        ) : (
+          <Badge variant="outline">Bukan Potensial</Badge>
+        )}
+      </div>
+      {catatan && (
+        <div>
+          <span className="mb-1 block text-xs font-medium text-muted-foreground">
+            Catatan Internal
+          </span>
+          <p className="rounded-lg border border-border bg-background p-3 text-sm whitespace-pre-wrap text-foreground">
+            {catatan}
+          </p>
+        </div>
+      )}
+      <div>
+        <span className="mb-1 block text-xs font-medium text-muted-foreground">
+          Pesan Edukasi
+        </span>
+        <p className="rounded-lg border border-border bg-background p-3 text-sm font-medium whitespace-pre-wrap text-foreground">
+          {konten}
+        </p>
+      </div>
+    </>
+  );
+}
+
 export default async function DetailKasusPage({
   params,
 }: {
@@ -65,8 +117,13 @@ export default async function DetailKasusPage({
     notFound();
   }
 
-  const hasAlergi =
-    skrining.alergiObat && skrining.alergiObat.trim().toLowerCase() !== "tidak ada";
+  const isSelesai = skrining.status === "SELESAI";
+  const isMenungguAcc = skrining.status === "MENUNGGU_ACC";
+  const isMenunggu = skrining.status === "MENUNGGU";
+  // Edukasi yang sudah pernah diproses dosen tapi status tidak SELESAI/MENUNGGU_ACC
+  // berarti ditolak dan dikembalikan ke koas untuk direvisi.
+  const ditolak =
+    !isSelesai && !isMenungguAcc && Boolean(skrining.edukasi?.reviewedAt);
 
   return (
     <div className="space-y-6">
@@ -86,222 +143,73 @@ export default async function DetailKasusPage({
         </div>
       </div>
 
-      {/* Strip ringkasan urgensi */}
-      <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-border/50 bg-card p-4 shadow-sm">
-        <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/10 font-bold text-primary">
-          {skrining.user.name
-            .trim()
-            .split(/\s+/)
-            .slice(0, 2)
-            .map((part) => part[0]?.toUpperCase())
-            .join("")}
-        </div>
-        <div className="mr-2">
-          <p className="font-semibold text-foreground">{skrining.user.name}</p>
-          <p className="text-xs text-muted-foreground">
-            {calculateAge(skrining.user.tanggalLahir)} Thn •{" "}
-            {skrining.user.jenisKelamin === "LAKI_LAKI"
-              ? "Laki-laki"
-              : skrining.user.jenisKelamin === "PEREMPUAN"
-              ? "Perempuan"
-              : "-"}
-          </p>
-        </div>
-        <Badge variant="outline">
-          Menunggu{" "}
-          {formatDistanceToNow(skrining.createdAt, { locale: localeId })}
-        </Badge>
-        <PainPill skalaNyeri={skrining.skalaNyeri} />
-        {hasAlergi && (
-          <Badge variant="destructive" className="gap-1">
-            <AlertTriangle size={12} /> Alergi Obat
-          </Badge>
-        )}
-      </div>
+      <KasusSummaryStrip skrining={skrining} />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        {/* Kolom Kiri */}
-        <div className="space-y-6 lg:col-span-2">
-          {/* Informasi Pasien */}
-          <Card className="rounded-2xl border border-border/50 shadow-sm">
-            <CardHeader className="flex-row items-center justify-between">
-              <SectionHeader icon={User} title="Informasi Pasien" />
-              <StatusBadge status={skrining.status} />
-            </CardHeader>
-            <CardContent className="grid grid-cols-2 gap-4 text-sm">
-              <Field label="Nama Lengkap" value={skrining.user.name} />
-              <Field
-                label="Usia / Kelamin"
-                value={`${calculateAge(skrining.user.tanggalLahir)} Tahun / ${
-                  skrining.user.jenisKelamin === "LAKI_LAKI"
-                    ? "Laki-laki"
-                    : skrining.user.jenisKelamin === "PEREMPUAN"
-                    ? "Perempuan"
-                    : "-"
-                }`}
-              />
-              <Field
-                label="Tgl. Lahir"
-                value={
-                  skrining.user.tanggalLahir
-                    ? format(skrining.user.tanggalLahir, "dd MMMM yyyy", {
-                        locale: localeId,
-                      })
-                    : "-"
-                }
-              />
-              <Field
-                label="Tgl. Skrining"
-                value={format(skrining.createdAt, "dd MMMM yyyy, HH:mm", {
-                  locale: localeId,
-                })}
-              />
-            </CardContent>
-          </Card>
+        <KasusPatientInfo skrining={skrining} />
 
-          {/* Anamnesa */}
-          <Card className="rounded-2xl border border-border/50 shadow-sm">
-            <CardHeader>
-              <SectionHeader icon={MessageCircle} title="Anamnesa (Keluhan)" />
-            </CardHeader>
-            <CardContent className="space-y-4 text-sm">
-              <div>
-                <span className="mb-1 block text-xs font-medium text-muted-foreground">
-                  Keluhan Utama
-                </span>
-                <p className="rounded-lg border border-border bg-background p-3 font-medium text-foreground">
-                  {skrining.keluhanUtama}
-                </p>
-              </div>
-              {skrining.keluhanTambahan && (
-                <Field label="Keluhan Tambahan" value={skrining.keluhanTambahan} />
-              )}
-              <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-                <Field label="Durasi" value={skrining.durasiKeluhan} />
-                <Field label="Lokasi Sakit" value={skrining.lokasiSakit || "-"} />
-                <div>
-                  <span className="mb-1 block text-xs font-medium text-muted-foreground">
-                    Skala Nyeri (1-10)
-                  </span>
-                  <PainBar skalaNyeri={skrining.skalaNyeri} />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Riwayat Medis */}
-          <Card className="rounded-2xl border border-border/50 shadow-sm">
-            <CardHeader>
-              <SectionHeader icon={ClipboardList} title="Riwayat Medis" />
-            </CardHeader>
-            <CardContent className="space-y-4 text-sm">
-              <Field
-                label="Riwayat Penyakit"
-                value={skrining.riwayatPenyakit || "Tidak ada"}
-              />
-              <Field label="Obat Rutin" value={skrining.obatRutin || "Tidak ada"} />
-              <Field
-                label="Kebiasaan Buruk"
-                value={skrining.kebiasaanBuruk || "Tidak ada"}
-              />
-
-              {/* Alergi — highlight peringatan */}
-              {hasAlergi ? (
-                <div className="flex items-start gap-3 rounded-xl border border-destructive/30 bg-destructive/10 p-4">
-                  <AlertTriangle
-                    size={20}
-                    className="mt-0.5 shrink-0 text-destructive"
-                  />
-                  <div>
-                    <p className="text-xs font-bold tracking-wide text-destructive uppercase">
-                      Perhatian: Alergi Obat
-                    </p>
-                    <p className="mt-1 font-semibold text-destructive">
-                      {skrining.alergiObat}
-                    </p>
-                  </div>
-                </div>
-              ) : (
-                <Field label="Alergi Obat" value="Tidak ada" />
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Galeri Foto */}
-          <Card className="rounded-2xl border border-border/50 shadow-sm">
-            <CardHeader>
-              <SectionHeader icon={Images} title="Galeri Foto" />
-            </CardHeader>
-            <CardContent>
-              {skrining.foto.length === 0 ? (
-                <p className="text-sm text-muted-foreground">
-                  Pasien tidak melampirkan foto.
-                </p>
-              ) : (
-                <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-                  {skrining.foto.map((f, i) => (
-                    <PhotoLightbox
-                      key={f.id}
-                      src={f.url}
-                      alt={`Foto rongga mulut pasien ${i + 1}`}
-                    />
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Kolom Kanan: Form Aksi */}
+        {/* Kolom Kanan: Aksi koas */}
         <div className="space-y-6">
           <Card className="rounded-2xl border border-border/50 shadow-sm lg:sticky lg:top-24">
             <CardHeader>
               <SectionHeader icon={Stethoscope} title="Tindakan Koas" />
             </CardHeader>
             <CardContent>
-              {skrining.status === "SELESAI" ? (
+              {isSelesai ? (
                 <div className="space-y-4">
                   <div className="flex items-start gap-2 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-400">
                     <CheckCircle2 size={18} className="mt-0.5 shrink-0" />
                     <span>
-                      Anda sudah meninjau dan mengirim edukasi untuk kasus ini.
+                      Edukasi sudah disetujui (ACC) dosen dan terlihat oleh
+                      pasien.
                     </span>
                   </div>
-
-                  <Field label="Kategori" value={skrining.kasus?.kategori} />
-                  <div>
-                    <span className="mb-1 block text-xs font-medium text-muted-foreground">
-                      Status Potensial
+                  <TinjauanRingkasan
+                    kategori={skrining.kasus?.kategori}
+                    isPotensial={skrining.kasus?.isPotensial}
+                    catatan={skrining.kasus?.catatan}
+                    konten={skrining.edukasi?.konten}
+                  />
+                </div>
+              ) : isMenungguAcc ? (
+                <div className="space-y-4">
+                  <div className="flex items-start gap-2 rounded-xl border border-violet-200 bg-violet-50 p-4 text-sm text-violet-800 dark:border-violet-500/20 dark:bg-violet-500/10 dark:text-violet-400">
+                    <Hourglass size={18} className="mt-0.5 shrink-0" />
+                    <span>
+                      Edukasi sudah dikirim dan sedang menunggu persetujuan
+                      (ACC) dosen. Pasien belum dapat melihatnya.
                     </span>
-                    {skrining.kasus?.isPotensial ? (
-                      <Badge className="gap-1">
-                        <Star size={12} /> Pasien Potensial
-                      </Badge>
-                    ) : (
-                      <Badge variant="outline">Bukan Potensial</Badge>
-                    )}
                   </div>
-                  {skrining.kasus?.catatan && (
-                    <div>
-                      <span className="mb-1 block text-xs font-medium text-muted-foreground">
-                        Catatan Internal
-                      </span>
-                      <p className="rounded-lg border border-border bg-background p-3 text-sm whitespace-pre-wrap text-foreground">
-                        {skrining.kasus.catatan}
-                      </p>
-                    </div>
-                  )}
-                  <div>
-                    <span className="mb-1 block text-xs font-medium text-muted-foreground">
-                      Pesan Edukasi
-                    </span>
-                    <p className="rounded-lg border border-border bg-background p-3 text-sm font-medium whitespace-pre-wrap text-foreground">
-                      {skrining.edukasi?.konten}
-                    </p>
-                  </div>
+                  <TinjauanRingkasan
+                    kategori={skrining.kasus?.kategori}
+                    isPotensial={skrining.kasus?.isPotensial}
+                    catatan={skrining.kasus?.catatan}
+                    konten={skrining.edukasi?.konten}
+                  />
                 </div>
               ) : (
-                <KasusActionForm skriningId={skrining.id} />
+                <div className="space-y-4">
+                  {ditolak && (
+                    <div className="flex items-start gap-2 rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
+                      <XCircle size={18} className="mt-0.5 shrink-0" />
+                      <div>
+                        <p className="font-semibold">
+                          Edukasi ditolak dosen — silakan revisi dan kirim ulang.
+                        </p>
+                        {skrining.edukasi?.catatanDosen && (
+                          <p className="mt-1 whitespace-pre-wrap">
+                            Alasan: {skrining.edukasi.catatanDosen}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  {isMenunggu ? (
+                    <MulaiTinjauButton skriningId={skrining.id} />
+                  ) : (
+                    <KasusActionForm skriningId={skrining.id} />
+                  )}
+                </div>
               )}
             </CardContent>
           </Card>

@@ -1,5 +1,4 @@
-import { auth } from "@/auth";
-import { redirect } from "next/navigation";
+import { requireUserOrRedirect } from "@/lib/auth-guard";
 import { logoutUser } from "@/features/auth/actions";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 
@@ -8,17 +7,13 @@ export default async function KoasLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const session = await auth();
-
-  if (!session || session.user.role !== "KOAS") {
-    redirect("/login");
-  }
+  const user = await requireUserOrRedirect("KOAS");
 
   return (
     <DashboardShell
       variant="koas"
       subtitle="Portal Koas Piket"
-      user={{ name: session.user.name ?? "Koas", meta: "Koas Piket" }}
+      user={{ name: user.name ?? "Koas", meta: "Koas Piket" }}
       logoutAction={logoutUser}
     >
       {children}

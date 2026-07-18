@@ -16,7 +16,7 @@ export async function registerUser(values: z.infer<typeof RegisterSchema>) {
       return { error: "Data tidak valid!" }
     }
 
-    const { email, password, name, nik, tanggalLahir, alamat } = validatedFields.data
+    const { email, password, name, nik, noTelepon, tanggalLahir, alamat } = validatedFields.data
 
     const existingUser = await db.user.findUnique({
       where: { email }
@@ -42,6 +42,7 @@ export async function registerUser(values: z.infer<typeof RegisterSchema>) {
         email,
         password: hashedPassword,
         nik,
+        noTelepon,
         tanggalLahir: new Date(tanggalLahir),
         alamat,
         role: "PASIEN" // Default role for public registration
@@ -74,7 +75,9 @@ export async function loginUser(values: z.infer<typeof LoginSchema>, callbackUrl
       ? "/admin/dashboard"
       : user?.role === "KOAS"
         ? "/koas/dashboard"
-        : "/pasien/dashboard"
+        : user?.role === "DOSEN"
+          ? "/dosen/dashboard"
+          : "/pasien/dashboard"
 
   try {
     // Memanggil NextAuth signIn ("credentials")

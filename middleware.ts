@@ -35,7 +35,9 @@ export default auth((req) => {
         ? "/admin/dashboard"
         : role === "KOAS"
           ? "/koas/dashboard"
-          : "/pasien/dashboard"
+          : role === "DOSEN"
+            ? "/dosen/dashboard"
+            : "/pasien/dashboard"
 
     // Jangan biarkan user yang sudah login mengakses halaman login/register
     if (isPublicRoute && nextUrl.pathname !== "/") {
@@ -48,6 +50,10 @@ export default auth((req) => {
     }
 
     if (nextUrl.pathname.startsWith("/koas") && role !== "KOAS") {
+      return Response.redirect(new URL(home, nextUrl))
+    }
+
+    if (nextUrl.pathname.startsWith("/dosen") && role !== "DOSEN") {
       return Response.redirect(new URL(home, nextUrl))
     }
 

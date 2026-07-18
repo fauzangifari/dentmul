@@ -2,12 +2,12 @@
 
 import { db } from "@/lib/db";
 import { SkriningSchema, type SkriningFormValues } from "@/features/skrining/schema";
-import { auth } from "@/auth";
+import { getVerifiedUser } from "@/lib/auth-guard";
 
 export async function submitSkrining(values: SkriningFormValues) {
   try {
-    const session = await auth();
-    if (!session?.user?.id) {
+    const pasien = await getVerifiedUser("PASIEN");
+    if (!pasien) {
       return { error: "Unauthorized" };
     }
 
@@ -31,7 +31,7 @@ export async function submitSkrining(values: SkriningFormValues) {
 
     const skrining = await db.skrining.create({
       data: {
-        userId: session.user.id,
+        userId: pasien.id,
         keluhanUtama,
         keluhanTambahan,
         durasiKeluhan,
@@ -54,13 +54,13 @@ export async function submitSkrining(values: SkriningFormValues) {
 
 export async function getRiwayatSkrining() {
   try {
-    const session = await auth();
-    if (!session?.user?.id) {
+    const pasien = await getVerifiedUser("PASIEN");
+    if (!pasien) {
       return { error: "Unauthorized" };
     }
 
     const skrinings = await db.skrining.findMany({
-      where: { userId: session.user.id },
+      where: { userId: pasien.id },
       orderBy: { createdAt: "desc" },
     });
 
@@ -73,8 +73,8 @@ export async function getRiwayatSkrining() {
 
 export async function getSkriningDetail(id: string) {
   try {
-    const session = await auth();
-    if (!session?.user?.id) {
+    const pasien = await getVerifiedUser("PASIEN");
+    if (!pasien) {
       return { error: "Unauthorized" };
     }
 
@@ -86,7 +86,7 @@ export async function getSkriningDetail(id: string) {
       },
     });
 
-    if (!skrining || skrining.userId !== session.user.id) {
+    if (!skrining || skrining.userId !== pasien.id) {
       return { error: "Skrining not found or unauthorized" };
     }
 

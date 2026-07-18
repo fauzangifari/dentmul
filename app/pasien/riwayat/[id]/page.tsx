@@ -141,7 +141,7 @@ export default async function DetailSkriningPage({
         {/* Section Edukasi dari Koas */}
         <div className="mt-8 pt-8 border-t border-border">
           <h3 className="text-xl font-bold text-foreground mb-4">Hasil & Rekomendasi</h3>
-          {skrining.edukasi ? (
+          {skrining.status === "SELESAI" && skrining.edukasi ? (
             <div className="bg-primary/5 p-6 rounded-2xl border border-primary/20 relative overflow-hidden">
               <div className="absolute top-0 right-0 p-4 opacity-10">
                 <User size={100} />

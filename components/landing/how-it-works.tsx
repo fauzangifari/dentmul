@@ -21,9 +21,8 @@ const STEPS: Step[] = [
   {
     status: "Ditinjau",
     icon: Stethoscope,
-    title: "Ditinjau oleh koas",
-    description:
-      "Koas kedokteran gigi FK Unmul memeriksa kasus Anda di bawah supervisi dosen pembimbing.",
+    title: "Ditinjau oleh DGM",
+    description:"Seorang DGM FKG Unmul memeriksa kasus anda di bawah supervisi dosen dan DPJP",
     accent: "human",
   },
   {
@@ -31,7 +30,7 @@ const STEPS: Step[] = [
     icon: FileCheck2,
     title: "Terima edukasi & rekomendasi",
     description:
-      "Anda menerima hasil skrining awal, edukasi, dan rekomendasi tindak lanjut — langsung di dashboard.",
+      "Anda menerima hasil skrining awal, edukasi, dan rekomendasi tindak lanjut langsung di dashboard.",
     accent: "done",
   },
 ];
@@ -61,7 +60,7 @@ export function HowItWorks() {
           </h2>
           <p className="text-lg text-muted-foreground">
             Ikuti perjalanan keluhan Anda dari saat dikirim hingga selesai
-            ditinjau — sama seperti yang Anda lihat di dashboard.
+            ditinjau sama seperti yang Anda lihat di dashboard.
           </p>
         </div>
 

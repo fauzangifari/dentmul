@@ -9,12 +9,12 @@ const FAQS: FaqItem[] = [
   {
     question: "Apakah layanan skrining ini gratis?",
     answer:
-      "Ya. Skrining awal melalui DentMul dapat digunakan tanpa biaya sebagai langkah awal sebelum Anda memutuskan datang ke RSGM.",
+      "Ya. Skrining awal melalui DentMul dapat digunakan tanpa biaya sebagai langkah awal sebelum Anda memutuskan datang ke RSGM Unmul.",
   },
   {
     question: "Siapa yang meninjau keluhan saya?",
     answer:
-      "Keluhan dan foto Anda ditinjau oleh koas (mahasiswa profesi) kedokteran gigi FK Universitas Mulawarman di bawah supervisi dosen pembimbing.",
+      "Keluhan dan foto Anda ditinjau oleh DGM FKG Unmul di bawah supervisi dosen dan DPJP.",
   },
   {
     question: "Berapa lama sampai saya menerima hasil?",
@@ -24,10 +24,10 @@ const FAQS: FaqItem[] = [
   {
     question: "Apakah data dan foto saya aman?",
     answer:
-      "Data keluhan dan foto Anda hanya digunakan untuk keperluan skrining dan hanya dapat diakses oleh koas serta pembimbing yang menangani kasus Anda.",
+      "Data keluhan dan foto Anda hanya digunakan untuk keperluan skrining dan hanya dapat diakses oleh DGM FKG Unmul di bawah supervisi dosen dan DPJP.",
   },
   {
-    question: "Kapan saya tetap harus datang ke klinik?",
+    question: "Kapan saya tetap harus datang ke RSGM Unmul?",
     answer:
       "Skrining ini bersifat awal dan bukan pengganti pemeriksaan langsung. Jika keluhan berat, nyeri hebat, bengkak, atau perdarahan, segera kunjungi RSGM atau fasilitas kesehatan terdekat.",
   },

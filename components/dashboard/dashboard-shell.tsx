@@ -10,6 +10,7 @@ import {
   FileText,
   History,
   Users,
+  User,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
@@ -24,12 +25,19 @@ type NavItem = {
   emphasis?: boolean;
 };
 
-export type ShellVariant = "koas" | "pasien" | "admin";
+export type ShellVariant = "koas" | "pasien" | "admin" | "dosen";
 
 /* Nav config lives inside this client module so icon components never have to
    cross the server → client boundary (Next 16 rejects non-serializable props). */
 const NAV_ITEMS: Record<ShellVariant, NavItem[]> = {
-  koas: [{ href: "/koas/dashboard", label: "Dashboard", icon: LayoutDashboard }],
+  koas: [
+    { href: "/koas/dashboard", label: "Dashboard", icon: LayoutDashboard },
+    { href: "/koas/profil", label: "Profil", icon: User },
+  ],
+  dosen: [
+    { href: "/dosen/dashboard", label: "Dashboard", icon: LayoutDashboard },
+    { href: "/dosen/profil", label: "Profil", icon: User },
+  ],
   admin: [
     { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
     {
@@ -49,6 +57,7 @@ const NAV_ITEMS: Record<ShellVariant, NavItem[]> = {
       emphasis: true,
     },
     { href: "/pasien/riwayat", label: "Riwayat", icon: History },
+    { href: "/pasien/profil", label: "Profil", icon: User },
   ],
 };
 

@@ -33,7 +33,7 @@ type UserFormValues = {
   name: string;
   email: string;
   password: string;
-  role: "PASIEN" | "KOAS" | "ADMIN";
+  role: "PASIEN" | "KOAS" | "DOSEN" | "ADMIN";
   isActive: boolean;
   nik: string;
   tanggalLahir: string;

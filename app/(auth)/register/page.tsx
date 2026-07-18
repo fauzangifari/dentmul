@@ -5,12 +5,16 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import Link from "next/link"
-import { User, IdCard, Mail, Lock, Calendar, MapPin, AlertCircle, ArrowRight } from "lucide-react"
+import { User, IdCard, Mail, Phone, Lock, Calendar, MapPin, AlertCircle, ArrowRight } from "lucide-react"
 import { RegisterSchema } from "@/features/auth/schema"
 import { registerUser, loginUser } from "@/features/auth/actions"
 import { AuthField, authInputClass } from "../_components/auth-field"
 
 type RegisterFormValues = z.infer<typeof RegisterSchema>
+
+// "+" hanya bermakna di awal nomor, sisanya harus angka.
+const sanitizePhone = (value: string) =>
+  (value.startsWith("+") ? "+" : "") + value.replace(/\D/g, "")
 
 export default function RegisterPage() {
   const [error, setError] = useState<string | undefined>("")
@@ -18,11 +22,13 @@ export default function RegisterPage() {
 
   const form = useForm<RegisterFormValues>({
     resolver: zodResolver(RegisterSchema),
+    mode: "onChange",
     defaultValues: {
       name: "",
       email: "",
       password: "",
       nik: "",
+      noTelepon: "",
       tanggalLahir: "",
       alamat: "",
     },
@@ -47,6 +53,7 @@ export default function RegisterPage() {
   }
 
   const errors = form.formState.errors
+  const noTeleponField = form.register("noTelepon")
 
   return (
     <div className="space-y-8">
@@ -67,6 +74,7 @@ export default function RegisterPage() {
         <AuthField label="Nama Lengkap" icon={User} error={errors.name?.message}>
           <input
             {...form.register("name")}
+            aria-invalid={!!errors.name}
             autoComplete="name"
             disabled={isPending}
             className={authInputClass}
@@ -77,6 +85,7 @@ export default function RegisterPage() {
         <AuthField label="NIK" icon={IdCard} error={errors.nik?.message}>
           <input
             {...form.register("nik")}
+            aria-invalid={!!errors.nik}
             inputMode="numeric"
             disabled={isPending}
             className={authInputClass}
@@ -87,6 +96,7 @@ export default function RegisterPage() {
         <AuthField label="Email" icon={Mail} error={errors.email?.message}>
           <input
             {...form.register("email")}
+            aria-invalid={!!errors.email}
             type="email"
             autoComplete="email"
             disabled={isPending}
@@ -95,9 +105,28 @@ export default function RegisterPage() {
           />
         </AuthField>
 
+        <AuthField label="No Telepon" icon={Phone} error={errors.noTelepon?.message}>
+          <input
+            {...noTeleponField}
+            onChange={(event) => {
+              event.target.value = sanitizePhone(event.target.value)
+              void noTeleponField.onChange(event)
+            }}
+            aria-invalid={!!errors.noTelepon}
+            type="tel"
+            inputMode="tel"
+            autoComplete="tel"
+            maxLength={15}
+            disabled={isPending}
+            className={authInputClass}
+            placeholder="08xxxxxxxxxx"
+          />
+        </AuthField>
+
         <AuthField label="Password" icon={Lock} error={errors.password?.message}>
           <input
             {...form.register("password")}
+            aria-invalid={!!errors.password}
             type="password"
             autoComplete="new-password"
             disabled={isPending}
@@ -113,6 +142,7 @@ export default function RegisterPage() {
         >
           <input
             {...form.register("tanggalLahir")}
+            aria-invalid={!!errors.tanggalLahir}
             type="date"
             disabled={isPending}
             className={authInputClass}
@@ -120,13 +150,14 @@ export default function RegisterPage() {
         </AuthField>
 
         <AuthField
-          label="Alamat"
+          label="Alamat Domisili"
           icon={MapPin}
           align="top"
           error={errors.alamat?.message}
         >
           <textarea
             {...form.register("alamat")}
+            aria-invalid={!!errors.alamat}
             disabled={isPending}
             className={`${authInputClass} min-h-20 py-2.5`}
             placeholder="Alamat tempat tinggal saat ini"

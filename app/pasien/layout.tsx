@@ -1,5 +1,4 @@
-import { auth } from "@/auth";
-import { redirect } from "next/navigation";
+import { requireUserOrRedirect } from "@/lib/auth-guard";
 import { logoutUser } from "@/features/auth/actions";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 
@@ -8,17 +7,13 @@ export default async function PasienLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const session = await auth();
-
-  if (!session || session.user.role !== "PASIEN") {
-    redirect("/login");
-  }
+  const user = await requireUserOrRedirect("PASIEN");
 
   return (
     <DashboardShell
       variant="pasien"
       subtitle="Portal Pasien"
-      user={{ name: session.user.name ?? "Pasien", meta: session.user.email ?? "" }}
+      user={{ name: user.name ?? "Pasien", meta: user.email ?? "" }}
       logoutAction={logoutUser}
     >
       {children}

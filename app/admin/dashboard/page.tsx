@@ -4,6 +4,7 @@ import {
   Users,
   ShieldCheck,
   Stethoscope,
+  GraduationCap,
   User,
   UserCheck,
   UserX,
@@ -27,11 +28,11 @@ export default async function AdminDashboard() {
           Dashboard Admin
         </h1>
         <p className="mt-1.5 text-muted-foreground">
-          Kelola akun pengguna DentMul — pasien, koas, dan admin.
+          Kelola akun pengguna DentMul — pasien, koas, dosen, dan admin.
         </p>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-5">
         <StatCard
           label="Total User"
           value={stats.total}
@@ -52,6 +53,13 @@ export default async function AdminDashboard() {
           icon={Stethoscope}
           iconBg="bg-blue-500/10"
           iconText="text-blue-600 dark:text-blue-400"
+        />
+        <StatCard
+          label="Dosen"
+          value={stats.dosen}
+          icon={GraduationCap}
+          iconBg="bg-violet-500/10"
+          iconText="text-violet-600 dark:text-violet-400"
         />
         <StatCard
           label="Admin"

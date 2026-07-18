@@ -1,6 +1,6 @@
 import { z } from "zod"
 
-export const ROLE_VALUES = ["PASIEN", "KOAS", "ADMIN"] as const
+export const ROLE_VALUES = ["PASIEN", "KOAS", "DOSEN", "ADMIN"] as const
 export const JENIS_KELAMIN_VALUES = ["LAKI_LAKI", "PEREMPUAN"] as const
 
 // Field demografis pasien — opsional di level tipe, wajib untuk PASIEN

@@ -73,15 +73,20 @@ export function KasusActionForm({ skriningId }: { skriningId: string }) {
     if (!pendingValues) return;
     setIsSubmitting(true);
     try {
-      await submitTinjauan({
+      const result = await submitTinjauan({
         skriningId,
         kategori: pendingValues.kategori,
         isPotensial: pendingValues.isPotensial,
         catatan: pendingValues.catatan,
         edukasiKonten: pendingValues.edukasiKonten,
       });
+      if (result?.error) {
+        toast.error(result.error);
+        setIsSubmitting(false);
+        return;
+      }
       setConfirmOpen(false);
-      toast.success("Edukasi berhasil dikirim ke pasien.");
+      toast.success("Edukasi terkirim. Menunggu persetujuan (ACC) dosen.");
       router.push("/koas/dashboard");
     } catch (error) {
       console.error(error);
@@ -186,7 +191,8 @@ export function KasusActionForm({ skriningId }: { skriningId: string }) {
                 />
               </FormControl>
               <FormDescription className="text-xs">
-                Pesan ini akan tampil di portal pasien sebagai hasil tinjauan.
+                Pesan ini dikirim ke dosen untuk di-ACC, lalu tampil di portal
+                pasien setelah disetujui.
               </FormDescription>
               <FormMessage />
             </FormItem>
@@ -207,10 +213,11 @@ export function KasusActionForm({ skriningId }: { skriningId: string }) {
       <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Kirim edukasi ke pasien?</DialogTitle>
+            <DialogTitle>Kirim edukasi untuk di-ACC dosen?</DialogTitle>
             <DialogDescription>
-              Edukasi akan dikirim ke pasien dan status kasus menjadi selesai.
-              Pastikan isi tinjauan sudah benar sebelum melanjutkan.
+              Edukasi akan dikirim ke dosen untuk ditinjau. Setelah di-ACC dosen,
+              edukasi baru terlihat oleh pasien. Pastikan isi tinjauan sudah
+              benar sebelum melanjutkan.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

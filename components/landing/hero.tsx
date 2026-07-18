@@ -36,9 +36,9 @@ export function Hero() {
           </h1>
 
           <p className="max-w-md text-lg leading-relaxed text-muted-foreground">
-            Ceritakan gejala dan unggah foto kondisi mulut Anda. Seorang koas
-            kedokteran gigi FK Unmul akan meninjaunya — di bawah supervisi dosen,
-            tanpa harus mengantre.
+            Ceritakan Gejala dan unggah foto kondisi mulut anda. Seorang dokter
+            gigi muda (DGM) FKG Unmul akan meninjau di bawah supervisi dosen
+            dan DPJP (Dokter Penanggung Jawab Pasien)
           </p>
 
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
