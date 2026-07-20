@@ -82,7 +82,13 @@ export async function getSkriningDetail(id: string) {
       where: { id },
       include: {
         foto: true,
-        edukasi: true,
+        edukasi: {
+          include: {
+            koas: {
+              select: { name: true, noTelepon: true },
+            },
+          },
+        },
       },
     });
 
