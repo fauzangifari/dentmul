@@ -205,6 +205,21 @@
     animation: signal-emit 3.6s cubic-bezier(0.16, 0.84, 0.44, 1) infinite;
   }
 
+  @keyframes signal-breathe {
+    0%,
+    100% {
+      transform: translate(-50%, -50%) scale(1);
+      opacity: 0.55;
+    }
+    50% {
+      transform: translate(-50%, -50%) scale(1.035);
+      opacity: 0.8;
+    }
+  }
+  .signal-breathe {
+    animation: signal-breathe 8s ease-in-out infinite;
+  }
+
   @keyframes signal-rise {
     from {
       opacity: 0;
@@ -231,6 +246,7 @@
   @media (prefers-reduced-motion: reduce) {
     .signal-ring,
     .signal-rise,
+    .signal-breathe,
     .track-fill {
       animation: none;
     }

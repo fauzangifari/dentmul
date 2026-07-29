@@ -1,0 +1,440 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+/* ============================================================
+   DentMul — Manual Book
+   Palet mengikuti .docs/color.md & .docs/design_system.md
+   ============================================================ */
+:root {
+  --galaxy: #081f5c;
+  --planetary: #334eac;
+  --universe: #7096d1;
+  --venus: #bad6eb;
+  --sky: #d0e3ff;
+  --milkyway: #fff9f0;
+  --meteor: #f7f2eb;
+
+  --ink: #12203f;
+  --ink-soft: #4b5b7a;
+  --ink-faint: #7c8aa5;
+  --line: #dde5f2;
+  --paper: #ffffff;
+
+  --amber: #b45309;
+  --amber-bg: #fff7ed;
+  --amber-line: #fed7aa;
+  --red: #b91c1c;
+  --red-bg: #fef2f2;
+  --red-line: #fecaca;
+  --green: #047857;
+  --green-bg: #ecfdf5;
+  --green-line: #a7f3d0;
+  --violet: #6d28d9;
+  --violet-bg: #f5f3ff;
+  --violet-line: #ddd6fe;
+}
+
+@page {
+  size: A4;
+  margin: 17mm 15mm 20mm 15mm;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  font-family: 'Plus Jakarta Sans', 'Segoe UI', system-ui, sans-serif;
+  font-size: 10.2pt;
+  line-height: 1.62;
+  color: var(--ink);
+  background: var(--paper);
+  margin: 0;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+p { margin: 0 0 0.72em; text-align: justify; hyphens: auto; }
+strong { font-weight: 700; color: var(--galaxy); }
+em { color: var(--ink-soft); }
+a { color: var(--planetary); text-decoration: none; }
+
+/* ---------- Sampul ---------- */
+.cover {
+  position: relative;
+  height: 259mm;
+  border-radius: 4mm;
+  padding: 26mm 18mm 16mm;
+  background:
+    radial-gradient(120% 90% at 82% 8%, rgba(112, 150, 209, 0.55) 0%, rgba(112, 150, 209, 0) 55%),
+    linear-gradient(158deg, #0a2569 0%, var(--galaxy) 45%, #050f31 100%);
+  color: #fff;
+  break-after: page;
+  overflow: hidden;
+}
+.cover::after {
+  content: '';
+  position: absolute;
+  right: -60mm; bottom: -70mm;
+  width: 170mm; height: 170mm;
+  border-radius: 50%;
+  border: 1.2mm solid rgba(186, 214, 235, 0.16);
+  box-shadow: 0 0 0 22mm rgba(186, 214, 235, 0.06);
+}
+.cover-mark {
+  display: flex; align-items: center; gap: 4mm;
+  font-size: 20pt; font-weight: 800; letter-spacing: -0.02em;
+}
+.cover-mark .glyph {
+  width: 14mm; height: 14mm; border-radius: 4mm;
+  background: linear-gradient(150deg, var(--universe), var(--planetary));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 17pt; box-shadow: 0 3mm 9mm rgba(0, 0, 0, 0.32);
+}
+.cover-mark .glyph span { filter: grayscale(1) brightness(3); }
+.cover-eyebrow {
+  margin-top: 46mm;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8.5pt; letter-spacing: 0.28em; text-transform: uppercase;
+  color: var(--venus);
+}
+.cover h1 {
+  font-family: 'Fraunces', Georgia, serif;
+  font-weight: 600;
+  font-size: 41pt;
+  line-height: 1.04;
+  letter-spacing: -0.025em;
+  margin: 5mm 0 0;
+}
+.cover h1 .accent { color: var(--venus); }
+.cover .lead {
+  margin-top: 7mm; max-width: 118mm;
+  font-size: 12pt; line-height: 1.55; color: rgba(255, 255, 255, 0.82);
+  text-align: left;
+}
+.cover-roles {
+  position: absolute; left: 18mm; bottom: 44mm;
+  display: flex; gap: 3mm; flex-wrap: wrap;
+}
+.cover-roles span {
+  border: 0.35mm solid rgba(186, 214, 235, 0.42);
+  border-radius: 99mm; padding: 1.6mm 5mm;
+  font-size: 8.6pt; font-weight: 600; color: var(--sky);
+}
+.cover-foot {
+  position: absolute; left: 18mm; right: 18mm; bottom: 16mm;
+  display: flex; justify-content: space-between; align-items: flex-end;
+  border-top: 0.3mm solid rgba(186, 214, 235, 0.28);
+  padding-top: 5mm;
+  font-size: 9pt; color: rgba(255, 255, 255, 0.72);
+}
+.cover-foot b { display: block; color: #fff; font-size: 10pt; }
+
+/* ---------- Struktur bab ---------- */
+.chapter { break-before: page; }
+.chapter-head {
+  display: flex; align-items: flex-start; gap: 6mm;
+  padding-bottom: 5mm; margin-bottom: 7mm;
+  border-bottom: 0.6mm solid var(--planetary);
+}
+.chapter-num {
+  flex: 0 0 auto;
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 30pt; font-weight: 700; line-height: 0.9;
+  color: var(--venus);
+}
+.chapter-head h2 {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 21pt; font-weight: 600; line-height: 1.12;
+  letter-spacing: -0.02em; color: var(--galaxy);
+  margin: 0 0 1.5mm;
+}
+.chapter-head .sub { margin: 0; font-size: 9.6pt; color: var(--ink-soft); text-align: left; }
+
+h3 {
+  font-size: 13pt; font-weight: 700; color: var(--galaxy);
+  margin: 9mm 0 3mm; letter-spacing: -0.01em;
+  break-after: avoid;
+}
+h3:first-of-type { margin-top: 0; }
+h4 {
+  font-size: 10.6pt; font-weight: 700; color: var(--planetary);
+  margin: 6mm 0 2mm; break-after: avoid;
+}
+
+/* ---------- Langkah bernomor ---------- */
+ol.steps { list-style: none; counter-reset: s; padding: 0; margin: 3mm 0 4mm; }
+ol.steps > li {
+  counter-increment: s;
+  position: relative;
+  padding-left: 10mm;
+  margin-bottom: 3.4mm;
+  break-inside: avoid;
+}
+ol.steps > li::before {
+  content: counter(s);
+  position: absolute; left: 0; top: 0.2mm;
+  width: 6.6mm; height: 6.6mm; border-radius: 50%;
+  background: var(--planetary); color: #fff;
+  font-size: 8.4pt; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+}
+ol.steps > li p { margin: 0 0 0.4em; text-align: left; }
+ol.steps ul { margin: 1.2mm 0 0; padding-left: 5mm; }
+
+ul.plain { margin: 2mm 0 3mm; padding-left: 5mm; }
+ul.plain li { margin-bottom: 1.4mm; }
+ul.plain li::marker { color: var(--universe); }
+
+/* ---------- Kotak catatan ---------- */
+.box {
+  border: 0.3mm solid var(--line);
+  border-left: 1.2mm solid var(--planetary);
+  background: #f6f9fe;
+  border-radius: 2mm;
+  padding: 3.4mm 4.5mm;
+  margin: 3.5mm 0 4.5mm;
+  break-inside: avoid;
+  font-size: 9.6pt;
+}
+.box p:last-child { margin-bottom: 0; }
+.box .t {
+  display: block; font-weight: 800; font-size: 8.4pt;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--planetary); margin-bottom: 1.4mm;
+}
+.box.warn { border-left-color: var(--amber); background: var(--amber-bg); }
+.box.warn .t { color: var(--amber); }
+.box.danger { border-left-color: var(--red); background: var(--red-bg); }
+.box.danger .t { color: var(--red); }
+.box.tip { border-left-color: var(--green); background: var(--green-bg); }
+.box.tip .t { color: var(--green); }
+
+/* ---------- Gambar ---------- */
+figure {
+  /* inline-block membuat Chrome memperlakukan gambar + keterangan sebagai satu
+     blok utuh, sehingga tidak menyisakan potongan tepi saat pindah halaman. */
+  display: inline-block;
+  vertical-align: top;
+  width: 100%;
+  margin: 4mm 0 5mm;
+  break-inside: avoid;
+  text-align: center;
+}
+figure img {
+  display: block;
+  margin: 0 auto;
+  max-width: 100%;
+  max-height: 172mm;
+  border: 0.3mm solid var(--line);
+  border-radius: 2.4mm;
+  box-shadow: 0 1.2mm 4mm rgba(8, 31, 92, 0.08);
+}
+figure.narrow img { max-width: 66%; }
+figure.mobile img { max-width: 43%; max-height: 155mm; }
+figure.wide img { max-height: 205mm; }
+figcaption {
+  margin-top: 2.2mm;
+  font-size: 8.4pt;
+  color: var(--ink-faint);
+  text-align: center;
+}
+figcaption b { color: var(--planetary); font-weight: 700; }
+
+/* ---------- Tabel ---------- */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 3mm 0 5mm;
+  font-size: 9.1pt;
+  break-inside: avoid;
+}
+thead th {
+  background: var(--galaxy);
+  color: #fff;
+  text-align: left;
+  font-weight: 700;
+  font-size: 8.6pt;
+  letter-spacing: 0.03em;
+  padding: 2.4mm 3mm;
+}
+thead th:first-child { border-top-left-radius: 1.8mm; }
+thead th:last-child { border-top-right-radius: 1.8mm; }
+tbody td {
+  padding: 2.4mm 3mm;
+  border-bottom: 0.25mm solid var(--line);
+  vertical-align: top;
+}
+tbody tr:nth-child(even) td { background: #f7faff; }
+table.compact { font-size: 8.7pt; }
+table.compact tbody td, table.compact thead th { padding: 1.9mm 2.4mm; }
+
+/* ---------- Lencana status ---------- */
+.badge {
+  display: inline-block;
+  border-radius: 99mm;
+  padding: 0.6mm 2.6mm;
+  font-size: 8.2pt;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.b-wait { background: var(--amber-bg); color: var(--amber); border: 0.25mm solid var(--amber-line); }
+.b-review { background: #eff6ff; color: #1d4ed8; border: 0.25mm solid #bfdbfe; }
+.b-acc { background: var(--violet-bg); color: var(--violet); border: 0.25mm solid var(--violet-line); }
+.b-done { background: var(--green-bg); color: var(--green); border: 0.25mm solid var(--green-line); }
+
+kbd {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-weight: 700;
+  font-size: 9pt;
+  background: var(--sky);
+  color: var(--galaxy);
+  border-radius: 1.4mm;
+  padding: 0.3mm 1.6mm;
+  white-space: nowrap;
+}
+
+/* ---------- Diagram alur status ---------- */
+.flow {
+  border: 0.3mm solid var(--line);
+  border-radius: 3mm;
+  background: linear-gradient(180deg, #fbfdff, #f2f7fe);
+  padding: 6mm 5mm 5mm;
+  margin: 4mm 0 5mm;
+  break-inside: avoid;
+}
+.flow-row { display: flex; align-items: stretch; gap: 0; }
+.flow-node {
+  flex: 1;
+  text-align: center;
+  padding: 0 1.5mm;
+}
+.flow-node .dot {
+  width: 9mm; height: 9mm; margin: 0 auto 2mm;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 9pt; font-weight: 800; color: #fff;
+  background: var(--planetary);
+}
+.flow-node.wait .dot { background: #d97706; }
+.flow-node.review .dot { background: #2563eb; }
+.flow-node.acc .dot { background: #7c3aed; }
+.flow-node.done .dot { background: #059669; }
+.flow-node .nm { font-size: 9.2pt; font-weight: 800; color: var(--galaxy); }
+.flow-node .ds { font-size: 8.2pt; color: var(--ink-soft); line-height: 1.35; margin-top: 0.8mm; }
+.flow-arrow {
+  flex: 0 0 8mm;
+  align-self: flex-start;
+  margin-top: 3.4mm;
+  text-align: center;
+  color: var(--universe);
+  font-size: 12pt;
+  font-weight: 700;
+}
+.flow-back {
+  margin-top: 4mm;
+  padding-top: 3mm;
+  border-top: 0.25mm dashed var(--venus);
+  font-size: 8.6pt;
+  color: var(--ink-soft);
+  text-align: center;
+}
+.flow-back b { color: var(--red); }
+
+/* ---------- Daftar isi ---------- */
+.toc { break-after: page; }
+.toc h2 {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 22pt; font-weight: 600; color: var(--galaxy);
+  margin: 0 0 6mm; letter-spacing: -0.02em;
+}
+.toc ol { list-style: none; padding: 0; margin: 0; }
+.toc li { margin-bottom: 0.6mm; }
+.toc .row {
+  display: flex; align-items: baseline; gap: 2mm;
+  padding: 1.7mm 0;
+  border-bottom: 0.2mm dotted var(--line);
+}
+.toc .row .lbl { font-weight: 700; color: var(--galaxy); font-size: 10.2pt; }
+.toc .row .fill { flex: 1; }
+.toc .row .pg { font-variant-numeric: tabular-nums; color: var(--planetary); font-weight: 700; }
+.toc .sub-list { padding-left: 6mm; margin: 0.6mm 0 2.4mm; }
+.toc .sub-list .row { padding: 1.1mm 0; border-bottom: none; }
+.toc .sub-list .lbl { font-weight: 500; font-size: 9.3pt; color: var(--ink-soft); }
+.toc .sub-list .pg { font-weight: 500; color: var(--ink-faint); }
+
+/* ---------- Halaman "tentang dokumen" ---------- */
+.about { break-after: page; }
+.about h2 {
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 22pt; font-weight: 600; color: var(--galaxy);
+  margin: 0 0 5mm; letter-spacing: -0.02em;
+}
+.legend {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 3mm;
+  margin: 4mm 0;
+}
+.legend > div {
+  border: 0.3mm solid var(--line); border-radius: 2.4mm;
+  padding: 3mm 3.6mm; font-size: 9pt; background: #fbfdff;
+}
+.legend b { display: block; color: var(--planetary); margin-bottom: 0.8mm; }
+
+/* ---------- Kartu ringkas peran ---------- */
+.rolecards { display: grid; grid-template-columns: 1fr 1fr; gap: 3.5mm; margin: 4mm 0 5mm; }
+.rolecard {
+  border: 0.3mm solid var(--line); border-radius: 3mm;
+  padding: 4mm; background: #fbfdff; break-inside: avoid;
+}
+.rolecard .hd {
+  display: flex; align-items: center; gap: 2.5mm; margin-bottom: 2mm;
+}
+.rolecard .ic {
+  width: 8mm; height: 8mm; border-radius: 2.2mm;
+  background: var(--sky); color: var(--galaxy);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11pt;
+}
+.rolecard h4 { margin: 0; font-size: 11pt; color: var(--galaxy); }
+.rolecard p { margin: 0; font-size: 9pt; color: var(--ink-soft); text-align: left; }
+
+/* ---------- Q&A ---------- */
+.qa { margin: 3mm 0 5mm; }
+.qa > div {
+  border-bottom: 0.25mm solid var(--line);
+  padding: 3mm 0;
+  break-inside: avoid;
+}
+.qa .q {
+  font-weight: 700; color: var(--galaxy); font-size: 10pt;
+  margin: 0 0 1.2mm; text-align: left;
+}
+.qa .a { margin: 0; font-size: 9.6pt; color: var(--ink-soft); }
+
+/* ---------- Glosarium ---------- */
+dl.glos { margin: 3mm 0; }
+dl.glos dt {
+  font-weight: 800; color: var(--galaxy); font-size: 9.8pt;
+  margin-top: 3mm;
+}
+dl.glos dd {
+  margin: 0.6mm 0 0; font-size: 9.4pt; color: var(--ink-soft);
+}
+
+/* ---------- Penutup ---------- */
+.closing {
+  break-before: page;
+  border: 0.3mm solid var(--line);
+  border-radius: 3mm;
+  background: linear-gradient(160deg, #f3f8ff, #fbfdff);
+  padding: 8mm;
+  margin-top: 6mm;
+  text-align: center;
+}
+.closing h3 { margin-top: 0; font-size: 15pt; }
+.closing p { text-align: center; color: var(--ink-soft); }
+.contact {
+  display: inline-block; text-align: left; margin-top: 3mm;
+  font-size: 9.4pt; color: var(--ink);
+}
+.contact b { color: var(--galaxy); }
+
+.avoid { break-inside: avoid; }
+.newpage { break-before: page; }
