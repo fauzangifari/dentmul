@@ -155,7 +155,7 @@ export default async function DosenKasusPage({
                   <Info size={18} className="mt-0.5 shrink-0" />
                   <span>
                     Belum ada edukasi yang perlu ditinjau untuk kasus ini. Kasus
-                    ini sedang ditangani koas atau belum dikirim untuk di-ACC.
+                    ini sedang ditangani DGM atau belum dikirim untuk di-ACC.
                   </span>
                 </div>
               )}

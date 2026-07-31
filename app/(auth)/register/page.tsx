@@ -65,7 +65,7 @@ export default function RegisterPage() {
           Mulai skrining Anda.
         </h1>
         <p className="text-sm text-muted-foreground">
-          Lengkapi data diri untuk mengirim keluhan pertama Anda ke koas FKG
+          Lengkapi data diri untuk mengirim keluhan pertama Anda ke DGM FKG
           Unmul.
         </p>
       </header>

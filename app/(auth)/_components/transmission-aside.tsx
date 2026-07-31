@@ -78,7 +78,7 @@ function SignalSpine() {
       <SpineConnector active />
       <SpineNode
         icon={Stethoscope}
-        title="Koas meninjau kasus"
+        title="DGM meninjau kasus"
         status="Ditinjau"
         tone="koas"
       />

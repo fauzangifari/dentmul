@@ -132,8 +132,8 @@ export function ApprovalPanel({
           <DialogHeader>
             <DialogTitle>Tolak edukasi ini?</DialogTitle>
             <DialogDescription>
-              Kasus akan dikembalikan ke koas untuk direvisi. Alasan penolakan
-              bersifat opsional dan akan ditampilkan ke koas.
+              Kasus akan dikembalikan ke DGM FK Unmul untuk direvisi. Alasan penolakan
+              bersifat opsional dan akan ditampilkan ke DGM FK Unmul.
             </DialogDescription>
           </DialogHeader>
           <Textarea

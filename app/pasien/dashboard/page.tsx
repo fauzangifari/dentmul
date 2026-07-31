@@ -81,7 +81,7 @@ export default async function PasienDashboard() {
             <h2 className="text-xl font-bold md:text-2xl">Punya keluhan gigi?</h2>
             <p className="mt-2 text-sm text-primary-foreground/80 md:text-base">
               Mulai skrining awal sekarang untuk mendapatkan penanganan lebih
-              cepat dari tim koas kami.
+              cepat dari tim DGM kami.
             </p>
           </div>
           <Link

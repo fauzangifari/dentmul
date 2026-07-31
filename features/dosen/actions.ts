@@ -160,11 +160,6 @@ export async function approveEdukasi(values: ApproveEdukasiInput) {
   }
 }
 
-/**
- * Tolak edukasi: hanya saat MENUNGGU_ACC. Menyimpan alasan (opsional) di
- * catatanDosen lalu mengembalikan skrining ke DITINJAU agar koas merevisi &
- * mengirim ulang.
- */
 export async function rejectEdukasi(values: RejectEdukasiInput) {
   try {
     const dosen = await getVerifiedUser("DOSEN");
