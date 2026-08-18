@@ -101,7 +101,7 @@ export function Hero() {
             <span aria-hidden className="hidden h-4 w-px bg-border sm:inline-block" />
             <span className="inline-flex items-center gap-2">
               <Stethoscope size={17} className="text-primary" />
-              Ditinjau koas FK Unmul
+              Ditinjau koas (DGM) FKG Unmul
             </span>
           </div>
 
