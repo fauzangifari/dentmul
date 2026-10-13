@@ -3,6 +3,7 @@ import { auth } from "@/auth";
 import { DashboardFilters } from "@/features/koas/components/dashboard-filters";
 import { PaginationControls } from "@/features/koas/components/pagination-controls";
 import { KasusTable, type KasusItem } from "@/features/koas/components/kasus-table";
+import { prioritasEfektif } from "@/features/skrining/anamnesa";
 import { EmptyState } from "@/components/empty-state";
 import Link from "next/link";
 import { SearchX, Clock, CheckCircle2, Users } from "lucide-react";
@@ -51,6 +52,7 @@ export default async function KoasDashboard({
     status: s.status,
     kategori: s.kasus?.kategori ?? null,
     skalaNyeri: s.skalaNyeri,
+    prioritas: prioritasEfektif(s),
   }));
 
   const firstName = session?.user?.name?.split(" ")[0] ?? "";

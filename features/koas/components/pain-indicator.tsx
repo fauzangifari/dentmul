@@ -1,16 +1,18 @@
 import { Activity } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { tingkatNyeri } from "@/features/skrining/anamnesa";
 
 function painSeverity(skalaNyeri: number | null) {
   if (skalaNyeri == null) return null;
-  if (skalaNyeri >= 7) {
+  const tingkat = tingkatNyeri(skalaNyeri);
+  if (tingkat === "BERAT") {
     return {
       bgClass: "bg-destructive/10",
       textClass: "text-destructive",
       barClass: "bg-destructive",
     };
   }
-  if (skalaNyeri >= 4) {
+  if (tingkat === "SEDANG") {
     return {
       bgClass: "bg-amber-500/10",
       textClass: "text-amber-600 dark:text-amber-500",

@@ -5,6 +5,18 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusBadge } from "@/features/skrining/components/status-badge";
 import { PhotoLightbox } from "@/features/skrining/components/photo-lightbox";
 import { PainPill, PainBar } from "@/features/koas/components/pain-indicator";
+import { KartuAnamnesa } from "@/features/skrining/components/kartu-anamnesa";
+import {
+  PrioritasBadge,
+  type PrioritasSkrining,
+} from "@/features/skrining/components/prioritas-badge";
+import {
+  alasanPrioritas,
+  isAnamnesaTerstruktur,
+  prioritasEfektif,
+  saranKategori,
+  type AnamnesaData,
+} from "@/features/skrining/anamnesa";
 import { calculateAge } from "@/lib/utils";
 import {
   User,
@@ -13,6 +25,7 @@ import {
   Images,
   AlertTriangle,
   Phone,
+  Users,
 } from "lucide-react";
 
 /**
@@ -33,6 +46,10 @@ export type KasusPatientData = {
   alergiObat: string | null;
   obatRutin: string | null;
   kebiasaanBuruk: string | null;
+  /** 1 = isian bebas (lama), 2 = anamnesis terstruktur. */
+  versiForm: number;
+  pengisi: "PASIEN_SENDIRI" | "ORANG_TUA_WALI";
+  prioritas: PrioritasSkrining;
   user: {
     name: string;
     tanggalLahir: Date | null;
@@ -40,7 +57,12 @@ export type KasusPatientData = {
     noTelepon: string | null;
   };
   foto: { id: string; url: string }[];
-};
+} & Omit<AnamnesaData, "skalaNyeri">;
+
+/** Saran kategori untuk prefill form tinjauan koas (hanya skrining v2). */
+export function getSaranKategori(skrining: KasusPatientData) {
+  return isAnamnesaTerstruktur(skrining) ? saranKategori(skrining) : undefined;
+}
 
 function genderLabel(g: KasusPatientData["user"]["jenisKelamin"]) {
   if (g === "LAKI_LAKI") return "Laki-laki";
@@ -92,6 +114,27 @@ function SectionHeader({
 /** Strip ringkasan identitas + urgensi di atas grid detail. */
 export function KasusSummaryStrip({ skrining }: { skrining: KasusPatientData }) {
   const alergi = hasAlergiObat(skrining.alergiObat);
+  const prioritas = prioritasEfektif(skrining);
+  const { alasan } = alasanPrioritas(skrining);
+  // Sama seperti daftar kasus: urgensi tidak relevan lagi setelah kasus selesai.
+  const tampilkanPrioritas = prioritas !== "RUTIN" && skrining.status !== "SELESAI";
+  return (
+    <div className="space-y-3">
+      {tampilkanPrioritas && (
+        <PrioritasBadge prioritas={prioritas} alasan={alasan} size="lg" />
+      )}
+      <KasusIdentitas skrining={skrining} alergi={alergi} />
+    </div>
+  );
+}
+
+function KasusIdentitas({
+  skrining,
+  alergi,
+}: {
+  skrining: KasusPatientData;
+  alergi: boolean;
+}) {
   return (
     <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-border/50 bg-card p-4 shadow-sm">
       <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/10 font-bold text-primary">
@@ -113,6 +156,11 @@ export function KasusSummaryStrip({ skrining }: { skrining: KasusPatientData }) 
           <AlertTriangle size={12} /> Alergi Obat
         </Badge>
       )}
+      {skrining.pengisi === "ORANG_TUA_WALI" && (
+        <Badge variant="outline" className="gap-1">
+          <Users size={12} /> Diisi oleh orang tua/wali
+        </Badge>
+      )}
     </div>
   );
 }
@@ -120,6 +168,7 @@ export function KasusSummaryStrip({ skrining }: { skrining: KasusPatientData }) 
 /** Kolom kiri: Informasi Pasien, Anamnesa, Riwayat Medis, Galeri Foto. */
 export function KasusPatientInfo({ skrining }: { skrining: KasusPatientData }) {
   const alergi = hasAlergiObat(skrining.alergiObat);
+  const terstruktur = isAnamnesaTerstruktur(skrining);
 
   return (
     <div className="space-y-6 lg:col-span-2">
@@ -172,34 +221,23 @@ export function KasusPatientInfo({ skrining }: { skrining: KasusPatientData }) {
         </CardContent>
       </Card>
 
-      {/* Anamnesa */}
+      {/* Anamnesa — v2 terstruktur, atau tampilan lama untuk skrining v1 */}
       <Card className="rounded-2xl border border-border/50 shadow-sm">
-        <CardHeader>
+        <CardHeader className="flex-row flex-wrap items-center justify-between gap-2">
           <SectionHeader icon={MessageCircle} title="Anamnesa (Keluhan)" />
-        </CardHeader>
-        <CardContent className="space-y-4 text-sm">
-          <div>
-            <span className="mb-1 block text-xs font-medium text-muted-foreground">
-              Keluhan Utama
+          {terstruktur && (
+            <span className="rounded-full bg-accent px-3 py-1.5 text-xs font-semibold text-accent-foreground">
+              Saran kategori: {saranKategori(skrining)}
             </span>
-            <p className="rounded-lg border border-border bg-background p-3 font-medium text-foreground">
-              {skrining.keluhanUtama}
-            </p>
-          </div>
-          {skrining.keluhanTambahan && (
-            <Field label="Keluhan Tambahan" value={skrining.keluhanTambahan} />
           )}
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-            <Field label="Durasi" value={skrining.durasiKeluhan} />
-            <Field label="Lokasi Sakit" value={skrining.lokasiSakit || "-"} />
-            <div>
-              <span className="mb-1 block text-xs font-medium text-muted-foreground">
-                Skala Nyeri (1-10)
-              </span>
-              <PainBar skalaNyeri={skrining.skalaNyeri} />
-            </div>
-          </div>
-        </CardContent>
+        </CardHeader>
+        {terstruktur ? (
+          <CardContent>
+            <KartuAnamnesa data={skrining} audience="klinisi" />
+          </CardContent>
+        ) : (
+          <AnamnesaLama skrining={skrining} />
+        )}
       </Card>
 
       {/* Riwayat Medis */}
@@ -263,5 +301,34 @@ export function KasusPatientInfo({ skrining }: { skrining: KasusPatientData }) {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+/** Tampilan anamnesa skrining lama (v1, isian bebas). */
+function AnamnesaLama({ skrining }: { skrining: KasusPatientData }) {
+  return (
+    <CardContent className="space-y-4 text-sm">
+      <div>
+        <span className="mb-1 block text-xs font-medium text-muted-foreground">
+          Keluhan Utama
+        </span>
+        <p className="rounded-lg border border-border bg-background p-3 font-medium text-foreground">
+          {skrining.keluhanUtama}
+        </p>
+      </div>
+      {skrining.keluhanTambahan && (
+        <Field label="Keluhan Tambahan" value={skrining.keluhanTambahan} />
+      )}
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+        <Field label="Durasi" value={skrining.durasiKeluhan} />
+        <Field label="Lokasi Sakit" value={skrining.lokasiSakit || "-"} />
+        <div>
+          <span className="mb-1 block text-xs font-medium text-muted-foreground">
+            Skala Nyeri (1-10)
+          </span>
+          <PainBar skalaNyeri={skrining.skalaNyeri} />
+        </div>
+      </div>
+    </CardContent>
   );
 }

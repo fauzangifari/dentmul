@@ -6,6 +6,7 @@ import {
   KasusTable,
   type KasusItem,
 } from "@/features/koas/components/kasus-table";
+import { prioritasEfektif } from "@/features/skrining/anamnesa";
 import { EmptyState } from "@/components/empty-state";
 import Link from "next/link";
 import { SearchX, Hourglass, CheckCircle2, ClipboardList } from "lucide-react";
@@ -49,6 +50,7 @@ export default async function DosenDashboard({
     status: s.status,
     kategori: s.kasus?.kategori ?? null,
     skalaNyeri: s.skalaNyeri,
+    prioritas: prioritasEfektif(s),
   }));
 
   const firstName = session?.user?.name?.split(" ")[0] ?? "";

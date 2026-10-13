@@ -2,7 +2,20 @@ import { getSkriningDetail } from "@/features/skrining/actions";
 import { notFound } from "next/navigation";
 import { StatusBadge } from "@/features/skrining/components/status-badge";
 import { PhotoLightbox } from "@/features/skrining/components/photo-lightbox";
-import { ChevronLeft, Calendar, User, MessageCircle, FileText } from "lucide-react";
+import { KartuAnamnesa } from "@/features/skrining/components/kartu-anamnesa";
+import {
+  isAnamnesaTerstruktur,
+  tandaBahayaLabels,
+} from "@/features/skrining/anamnesa";
+import { RUJUKAN_DARURAT } from "@/features/skrining/constants";
+import {
+  ChevronLeft,
+  Calendar,
+  User,
+  MessageCircle,
+  FileText,
+  AlertTriangle,
+} from "lucide-react";
 import Link from "next/link";
 import { toWhatsappLink } from "@/lib/utils";
 
@@ -21,6 +34,8 @@ export default async function DetailSkriningPage({
   }
 
   const { skrining } = res;
+  const terstruktur = isAnamnesaTerstruktur(skrining);
+  const tandaBahaya = tandaBahayaLabels(skrining);
   const dateFormatted = new Intl.DateTimeFormat("id-ID", {
     dateStyle: "full",
     timeStyle: "short",
@@ -59,7 +74,36 @@ export default async function DetailSkriningPage({
           )}
         </div>
 
+        {/* Tanda bahaya yang dilaporkan pasien (skrining v2) */}
+        {tandaBahaya.length > 0 && skrining.status !== "SELESAI" && (
+          <div
+            role="alert"
+            className="flex gap-3 rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive"
+          >
+            <AlertTriangle size={20} className="mt-0.5 shrink-0" />
+            <div className="space-y-1">
+              <p className="font-bold">
+                Anda melaporkan tanda bahaya: {tandaBahaya.join(", ")}.
+              </p>
+              <p>
+                Bila belum diperiksa, segera datang ke {RUJUKAN_DARURAT}. Jangan
+                menunggu hasil skrining.
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Section Keluhan */}
+        {terstruktur ? (
+          <div className="space-y-4">
+            <h3 className="text-lg font-bold text-primary flex items-center gap-2">
+              <MessageCircle size={20} /> Data Keluhan
+            </h3>
+            <div className="bg-background p-4 rounded-xl border border-border">
+              <KartuAnamnesa data={skrining} audience="pasien" />
+            </div>
+          </div>
+        ) : (
         <div className="space-y-4">
           <h3 className="text-lg font-bold text-primary flex items-center gap-2">
             <MessageCircle size={20} /> Data Keluhan
@@ -79,7 +123,7 @@ export default async function DetailSkriningPage({
                 <p className="font-medium text-foreground">{skrining.lokasiSakit}</p>
               </div>
             )}
-            {skrining.skalaNyeri && (
+            {skrining.skalaNyeri != null && (
               <div>
                 <p className="text-sm text-muted-foreground mb-1">Skala Nyeri (1-10)</p>
                 <div className="flex items-center gap-2">
@@ -101,6 +145,7 @@ export default async function DetailSkriningPage({
             )}
           </div>
         </div>
+        )}
 
         {/* Section Riwayat Medis */}
         <div className="space-y-4">

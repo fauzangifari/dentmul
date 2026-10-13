@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/auth";
+import { getVerifiedUser } from "@/lib/auth-guard";
 import { supabase } from "@/lib/supabase";
 import { db } from "@/lib/db";
 import { v4 as uuidv4 } from "uuid";
@@ -8,10 +8,29 @@ import { v4 as uuidv4 } from "uuid";
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/jpg"];
 
+/**
+ * Jenis gambar dari isi file (magic bytes), bukan dari `file.type`/nama file
+ * yang dikirim browser dan bisa dipalsukan.
+ */
+function deteksiGambar(buffer: Buffer) {
+  if (buffer.subarray(0, 3).equals(Buffer.from([0xff, 0xd8, 0xff]))) {
+    return { contentType: "image/jpeg", ext: "jpg" };
+  }
+  if (
+    buffer
+      .subarray(0, 8)
+      .equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))
+  ) {
+    return { contentType: "image/png", ext: "png" };
+  }
+  return null;
+}
+
 export async function POST(request: Request) {
   try {
-    const session = await auth();
-    if (!session?.user?.id) {
+    // Cek ke DB (bukan hanya token): akun nonaktif tidak boleh mengunggah lagi.
+    const user = await getVerifiedUser("PASIEN");
+    if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -40,7 +59,7 @@ export async function POST(request: Request) {
       );
     }
 
-    if (skrining.userId !== session.user.id) {
+    if (skrining.userId !== user.id) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -70,20 +89,28 @@ export async function POST(request: Request) {
       );
     }
 
-    const fileExt = file.name.split(".").pop();
-    const fileName = `${uuidv4()}.${fileExt}`;
-    // Format: userId/skriningId/filename
-    const filePath = `${session.user.id}/${skriningId}/${fileName}`;
-    const bucketName = process.env.SUPABASE_STORAGE_BUCKET || "skrining";
-
     // Konversi File ke Buffer untuk upload ke Supabase via supabase-js
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
-    const { data: uploadData, error: uploadError } = await supabase.storage
+    const gambar = deteksiGambar(buffer);
+    if (!gambar) {
+      return NextResponse.json(
+        { error: "File bukan gambar JPEG/PNG yang valid." },
+        { status: 400 }
+      );
+    }
+
+    // Ekstensi dari isi file, bukan dari nama file kiriman browser.
+    const fileName = `${uuidv4()}.${gambar.ext}`;
+    // Format: userId/skriningId/filename
+    const filePath = `${user.id}/${skriningId}/${fileName}`;
+    const bucketName = process.env.SUPABASE_STORAGE_BUCKET || "skrining";
+
+    const { error: uploadError } = await supabase.storage
       .from(bucketName)
       .upload(filePath, buffer, {
-        contentType: file.type,
+        contentType: gambar.contentType,
       });
 
     if (uploadError) {

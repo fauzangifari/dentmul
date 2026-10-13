@@ -33,6 +33,18 @@ enum StatusSkrining {
   SELESAI       // sudah di-ACC dosen, edukasi terlihat pasien
 }
 
+enum PengisiSkrining {
+  PASIEN_SENDIRI
+  ORANG_TUA_WALI
+}
+
+// Urutan deklarasi = urutan sort (SEGERA paling atas di daftar kasus)
+enum PrioritasSkrining {
+  SEGERA         // ada tanda bahaya / nyeri berat — perlu ditangani segera
+  EVALUASI_LESI  // sariawan/benjolan ≥ 2 minggu — perlu evaluasi lesi
+  RUTIN
+}
+
 // ============================================================
 // MODELS
 // ============================================================
@@ -71,12 +83,39 @@ model Skrining {
   id     String @id @default(cuid())
   userId String
 
+  // Versi formulir: 1 = isian bebas (lama), 2 = anamnesis terstruktur.
+  // Kolom keluhan lama tetap diisi pada versi 2 (dibangkitkan otomatis oleh
+  // server) agar daftar kasus, pencarian, dan data lama tetap berfungsi.
+  versiForm Int             @default(1)
+  pengisi   PengisiSkrining @default(PASIEN_SENDIRI)
+  prioritas PrioritasSkrining @default(RUTIN) // dihitung server saat submit
+
   // Data Keluhan (Anamnesa)
-  keluhanUtama    String
-  keluhanTambahan String?
+  keluhanUtama    String  // v2: label pendek, contoh "Gigi sakit · 46"
+  keluhanTambahan String? // v2: label keluhan ke-2 dst.
   durasiKeluhan   String  // contoh: "3 hari", "1 minggu"
   lokasiSakit     String? // contoh: "Rahang kanan atas"
-  skalaNyeri      Int?    // Skala nyeri 1–10 (Visual Analogue Scale)
+  skalaNyeri      Int?    // Skala nyeri 0–10 (v1: 1–10)
+
+  // Detail Keluhan (v2) — berlaku untuk keluhan utama.
+  // Nilai opsi berupa kode String; daftar & label ada di
+  // features/skrining/constants.ts (bisa ditambah tanpa migrasi).
+  durasiAngka      Int?
+  durasiSatuan     String?  // HARI | MINGGU | BULAN | TAHUN
+  onset            String?  // TIBA_TIBA | PERLAHAN | TIDAK_INGAT
+  perkembangan     String?  // MAKIN_PARAH | TETAP | MEMBAIK | HILANG_TIMBUL
+  riwayatPerawatan String[] @default([])
+  jenisNyeri       String?  // NGILU | BERDENYUT | TAJAM | TUMPUL
+  polaNyeri        String?  // SPONTAN | DIPICU
+  pemicuNyeri      String[] @default([])
+  lamaNyeriPemicu  String?  // DETIK | MENIT
+  waktuNyeri       String[] @default([])
+  nyeriBangunTidur Boolean?
+  dampak           String[] @default([])
+  upaya            String[] @default([])
+  keteranganObat   String?  // nama obat & hasilnya, bila upaya MINUM_OBAT
+  gejalaLain       String[] @default([])
+  tandaBahaya      String[] @default([]) // kode tanda bahaya yang dijawab "Ya"; kosong = semua "Tidak"
 
   // Riwayat Medis (Medical History)
   riwayatPenyakit String? // Jantung, Diabetes, Asma, dll — boleh kosong
@@ -90,10 +129,43 @@ model Skrining {
   updatedAt DateTime       @updatedAt
 
   // Relasi
-  user    User          @relation(fields: [userId], references: [id])
+  user    User              @relation(fields: [userId], references: [id])
   foto    FotoSkrining[]
-  kasus   KasusPasien?  // one-to-one, dibuat oleh koas
-  edukasi Edukasi?      // one-to-one, dikirim oleh koas
+  keluhan KeluhanSkrining[] // v2: satu baris per keluhan (urutan 0 = keluhan utama)
+  kasus   KasusPasien?      // one-to-one, dibuat oleh koas
+  edukasi Edukasi?          // one-to-one, dikirim oleh koas
+}
+
+// Jenis & lokasi tiap keluhan pada formulir v2. Pasien bisa menambah lebih
+// dari satu keluhan; urutan 0 adalah keluhan utama.
+model KeluhanSkrining {
+  id           String   @id @default(cuid())
+  skriningId   String
+  urutan       Int
+  jenis        String[] // GIGI_SAKIT, GUSI_BENGKAK, SARIAWAN, ... (boleh lebih dari satu)
+  jenisLainnya String?  // isian bebas bila jenis LAINNYA
+  area         String   // GIGI | GUSI | LIDAH | PIPI_DALAM | LANGIT_LANGIT | DASAR_MULUT | BIBIR | SENDI_RAHANG | WAJAH_LEHER
+
+  // Area GIGI / GUSI — odontogram
+  jenisGigi   String?           // DEWASA | SUSU
+  gigi        Int[]   @default([]) // notasi FDI: 11–48 (dewasa), 51–85 (susu)
+  tidakYakin  Boolean @default(false) // pasien tidak yakin giginya → isi regio
+  regioRahang String?           // ATAS | BAWAH
+  regioSisi   String?           // KANAN | KIRI (dari sisi pasien)
+  regioSegmen String?           // DEPAN | BELAKANG
+
+  // Area jaringan lunak & wajah
+  titikJaringanLunak String? // BIBIR_ATAS | LANGIT_LANGIT | PIPI_KANAN | LIDAH | PIPI_KIRI | DASAR_MULUT | BIBIR_BAWAH
+  sisiWajah          String? // KANAN | KIRI | KEDUA (sendi rahang / wajah-leher)
+
+  sebaran   String   // SATU_TITIK | MENYEBAR | MENJALAR
+  cerita    String   // cerita keluhan dengan kata-kata pasien sendiri
+  createdAt DateTime @default(now())
+
+  // Relasi — cascade delete: jika skrining dihapus, keluhan ikut terhapus
+  skrining Skrining @relation(fields: [skriningId], references: [id], onDelete: Cascade)
+
+  @@unique([skriningId, urutan])
 }
 
 model FotoSkrining {

@@ -46,7 +46,18 @@ const formSchema = z.object({
   }),
 });
 
-export function KasusActionForm({ skriningId }: { skriningId: string }) {
+export function KasusActionForm({
+  skriningId,
+  defaultKategori,
+  saranKategori,
+}: {
+  skriningId: string;
+  /** Kategori yang pernah dipilih koas (mis. saat merevisi setelah ditolak dosen). */
+  defaultKategori?: string;
+  /** Saran kategori dari anamnesis terstruktur — dipakai bila belum ada pilihan koas. */
+  saranKategori?: string;
+}) {
+  const kategoriDariSaran = !defaultKategori && Boolean(saranKategori);
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -56,7 +67,7 @@ export function KasusActionForm({ skriningId }: { skriningId: string }) {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      kategori: "",
+      kategori: defaultKategori ?? saranKategori ?? "",
       isPotensial: false,
       catatan: "",
       edukasiKonten: "",
@@ -122,6 +133,8 @@ export function KasusActionForm({ skriningId }: { skriningId: string }) {
               </Select>
               <FormDescription className="text-xs">
                 Klasifikasi bidang perawatan yang paling sesuai dengan keluhan.
+                {kategoriDariSaran &&
+                  " Sudah terisi dari saran sistem; ganti bila tidak sesuai."}
               </FormDescription>
               <FormMessage />
             </FormItem>

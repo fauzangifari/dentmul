@@ -1,7 +1,17 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { SkriningSchema, type SkriningFormValues } from "@/features/skrining/schema";
+import {
+  SkriningSchema,
+  normalisasiSkrining,
+  type SkriningFormValues,
+} from "@/features/skrining/schema";
+import {
+  formatDurasi,
+  formatLokasi,
+  hitungPrioritas,
+  labelKeluhan,
+} from "@/features/skrining/anamnesa";
 import { getVerifiedUser } from "@/lib/auth-guard";
 
 export async function submitSkrining(values: SkriningFormValues) {
@@ -17,31 +27,37 @@ export async function submitSkrining(values: SkriningFormValues) {
       return { error: "Invalid fields" };
     }
 
-    const {
-      keluhanUtama,
-      keluhanTambahan,
-      durasiKeluhan,
-      lokasiSakit,
-      skalaNyeri,
-      riwayatPenyakit,
-      alergiObat,
-      obatRutin,
-      kebiasaanBuruk,
-    } = validatedFields.data;
+    const data = validatedFields.data;
+    const { keluhan, ...anamnesa } = normalisasiSkrining(data);
+    const [utama, ...lain] = keluhan;
 
     const skrining = await db.skrining.create({
       data: {
         userId: pasien.id,
-        keluhanUtama,
-        keluhanTambahan,
-        durasiKeluhan,
-        lokasiSakit,
-        skalaNyeri,
-        riwayatPenyakit,
-        alergiObat,
-        obatRutin,
-        kebiasaanBuruk,
+        versiForm: 2,
+        pengisi: data.pengisi,
+        prioritas: hitungPrioritas({ ...anamnesa, keluhan }),
+
+        // Kolom lama diisi otomatis agar daftar kasus, pencarian, dan
+        // tampilan lain yang belum mengenal v2 tetap berfungsi.
+        keluhanUtama:
+          labelKeluhan(utama) +
+          (lain.length ? ` (+${lain.length} keluhan lain)` : ""),
+        keluhanTambahan: lain.length ? lain.map(labelKeluhan).join("; ") : null,
+        durasiKeluhan: formatDurasi(anamnesa.durasiAngka, anamnesa.durasiSatuan),
+        lokasiSakit: formatLokasi(utama),
+
+        ...anamnesa,
+
+        riwayatPenyakit: data.riwayatPenyakit,
+        alergiObat: data.alergiObat,
+        obatRutin: data.obatRutin,
+        kebiasaanBuruk: data.kebiasaanBuruk,
         status: "MENUNGGU",
+
+        keluhan: {
+          create: keluhan.map((k, urutan) => ({ urutan, ...k })),
+        },
       },
     });
 
@@ -82,6 +98,7 @@ export async function getSkriningDetail(id: string) {
       where: { id },
       include: {
         foto: true,
+        keluhan: { orderBy: { urutan: "asc" } },
         edukasi: {
           include: {
             koas: {

@@ -13,6 +13,7 @@ import { MulaiTinjauButton } from "@/features/koas/components/mulai-tinjau-butto
 import {
   KasusPatientInfo,
   KasusSummaryStrip,
+  getSaranKategori,
 } from "@/features/skrining/components/kasus-patient-info";
 import {
   ArrowLeft,
@@ -207,7 +208,11 @@ export default async function DetailKasusPage({
                   {isMenunggu ? (
                     <MulaiTinjauButton skriningId={skrining.id} />
                   ) : (
-                    <KasusActionForm skriningId={skrining.id} />
+                    <KasusActionForm
+                      skriningId={skrining.id}
+                      defaultKategori={skrining.kasus?.kategori}
+                      saranKategori={getSaranKategori(skrining)}
+                    />
                   )}
                 </div>
               )}

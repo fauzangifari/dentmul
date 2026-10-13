@@ -31,6 +31,9 @@ export async function getSkriningList(params: SkriningListParams = {}) {
   if (search) {
     where.OR = [
       { keluhanUtama: { contains: search, mode: "insensitive" } },
+      // v2: `keluhanUtama` hanya label ("Gigi sakit · 46"); kata-kata pasien
+      // ada di cerita tiap keluhan.
+      { keluhan: { some: { cerita: { contains: search, mode: "insensitive" } } } },
       { user: { name: { contains: search, mode: "insensitive" } } },
     ];
   }
@@ -53,7 +56,8 @@ export async function getSkriningList(params: SkriningListParams = {}) {
   const [skrinings, total] = await Promise.all([
     db.skrining.findMany({
       where,
-      orderBy: [{ status: "asc" }, { createdAt: "desc" }],
+      // Prioritas triase (SEGERA → EVALUASI_LESI → RUTIN) di dalam tiap status.
+      orderBy: [{ status: "asc" }, { prioritas: "asc" }, { createdAt: "desc" }],
       include: {
         user: {
           select: {
@@ -80,8 +84,17 @@ export async function getSkriningStats() {
 
   const [grouped, mendesak] = await Promise.all([
     db.skrining.groupBy({ by: ["status"], _count: { _all: true } }),
+    // Mendesak = belum ditinjau dengan prioritas SEGERA (tanda bahaya / nyeri
+    // berat). Skrining lama (v1) dengan nyeri ≥ 7 tetap dihitung walau kolom
+    // prioritasnya belum ter-backfill — selaras dengan `prioritasEfektif`.
     db.skrining.count({
-      where: { status: "MENUNGGU", skalaNyeri: { gte: 7 } },
+      where: {
+        status: "MENUNGGU",
+        OR: [
+          { prioritas: "SEGERA" },
+          { versiForm: { lt: 2 }, skalaNyeri: { gte: 7 } },
+        ],
+      },
     }),
   ]);
 
@@ -125,6 +138,7 @@ export async function getKasusDetail(id: string) {
         },
       },
       foto: true,
+      keluhan: { orderBy: { urutan: "asc" } },
       kasus: true,
       edukasi: true,
     },

@@ -1,16 +1,23 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { Camera, X, AlertCircle } from "lucide-react";
+import { Camera, Check, X, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 
 interface PhotoUploaderProps {
   files: File[];
   onFilesChange: (files: File[]) => void;
   maxFiles?: number;
+  /** Foto yang sudah terunggah ke server — tidak bisa dihapus dari sini lagi. */
+  lockedFiles?: readonly File[];
 }
 
-export function PhotoUploader({ files, onFilesChange, maxFiles = 5 }: PhotoUploaderProps) {
+export function PhotoUploader({
+  files,
+  onFilesChange,
+  maxFiles = 5,
+  lockedFiles = [],
+}: PhotoUploaderProps) {
   const [dragActive, setDragActive] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -151,18 +158,24 @@ export function PhotoUploader({ files, onFilesChange, maxFiles = 5 }: PhotoUploa
                   alt={`Foto ${i + 1}`}
                   className="h-full w-full object-cover"
                 />
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    removeFile(i);
-                  }}
-                  className="absolute top-2 right-2 rounded-full bg-destructive p-1.5 text-white shadow-md transition-opacity hover:bg-destructive/90"
-                  title="Hapus foto"
-                  aria-label={`Hapus foto ${i + 1}`}
-                >
-                  <X size={16} />
-                </button>
+                {lockedFiles.includes(file) ? (
+                  <span className="absolute top-2 right-2 flex items-center gap-1 rounded-full bg-primary px-2 py-1 text-xs font-semibold text-primary-foreground shadow-md">
+                    <Check size={14} /> Terkirim
+                  </span>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      removeFile(i);
+                    }}
+                    className="absolute top-2 right-2 rounded-full bg-destructive p-1.5 text-white shadow-md transition-opacity hover:bg-destructive/90"
+                    title="Hapus foto"
+                    aria-label={`Hapus foto ${i + 1}`}
+                  >
+                    <X size={16} />
+                  </button>
+                )}
               </div>
             ))}
           </div>

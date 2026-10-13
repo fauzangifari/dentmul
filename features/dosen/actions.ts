@@ -46,6 +46,9 @@ export async function getEdukasiList(params: EdukasiListParams = {}) {
   if (search) {
     where.OR = [
       { keluhanUtama: { contains: search, mode: "insensitive" } },
+      // v2: `keluhanUtama` hanya label ("Gigi sakit · 46"); kata-kata pasien
+      // ada di cerita tiap keluhan.
+      { keluhan: { some: { cerita: { contains: search, mode: "insensitive" } } } },
       { user: { name: { contains: search, mode: "insensitive" } } },
     ];
   }
@@ -104,6 +107,7 @@ export async function getKasusDetailForDosen(id: string) {
         },
       },
       foto: true,
+      keluhan: { orderBy: { urutan: "asc" } },
       kasus: true,
       edukasi: {
         include: { koas: { select: { name: true } } },
