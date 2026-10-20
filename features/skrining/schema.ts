@@ -86,7 +86,7 @@ export const KeluhanSchema = z
     cerita: z
       .string()
       .trim()
-      .min(5, "Ceritakan keluhan Anda minimal 5 karakter")
+      .min(1, "Ceritakan keluhan Anda")
       .max(1000, "Cerita maksimal 1000 karakter"),
   })
   // `when`: tetap jalankan cek lokasi walau field lain (mis. sebaran) belum
