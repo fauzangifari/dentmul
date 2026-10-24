@@ -20,13 +20,22 @@ export type EdukasiListParams = {
   page?: number;
 };
 
-// Status skrining yang tampil di dashboard dosen. Default fokus antrean ACC.
-const DOSEN_STATUSES = ["MENUNGGU_ACC", "SELESAI"] as const;
+// Filter yang tampil di dashboard dosen. Default fokus antrean ACC.
+// DITOLAK bukan StatusSkrining — lihat DITOLAK_WHERE.
+const DOSEN_STATUSES = ["MENUNGGU_ACC", "SELESAI", "DITOLAK"] as const;
+
+// Edukasi yang ditolak dosen dikembalikan ke koas (DITINJAU) dengan jejak
+// review (reviewedAt) tetap tersimpan sampai koas mengirim ulang — saat itu
+// jejaknya dihapus dan kasus kembali ke antrean MENUNGGU_ACC.
+const DITOLAK_WHERE: Prisma.SkriningWhereInput = {
+  status: "DITINJAU",
+  edukasi: { reviewedAt: { not: null } },
+};
 
 /**
  * Daftar kasus yang relevan untuk dosen (shared pool — semua dosen melihat
  * antrean yang sama). Default menampilkan yang MENUNGGU_ACC; bisa difilter ke
- * SELESAI (riwayat yang sudah disetujui).
+ * SELESAI (riwayat yang sudah disetujui) atau DITOLAK (menunggu revisi koas).
  */
 export async function getEdukasiList(params: EdukasiListParams = {}) {
   await requireUserOrThrow("DOSEN");
@@ -39,9 +48,10 @@ export async function getEdukasiList(params: EdukasiListParams = {}) {
     ? statusParam
     : "MENUNGGU_ACC";
 
-  const where: Prisma.SkriningWhereInput = {
-    status: status as Prisma.SkriningWhereInput["status"],
-  };
+  const where: Prisma.SkriningWhereInput =
+    status === "DITOLAK"
+      ? { ...DITOLAK_WHERE }
+      : { status: status as Prisma.SkriningWhereInput["status"] };
 
   if (search) {
     where.OR = [
@@ -67,6 +77,7 @@ export async function getEdukasiList(params: EdukasiListParams = {}) {
           },
         },
         kasus: true,
+        edukasi: { select: { reviewedAt: true } },
       },
       skip: (page - 1) * PAGE_SIZE,
       take: PAGE_SIZE,
@@ -82,12 +93,18 @@ export async function getEdukasiList(params: EdukasiListParams = {}) {
 export async function getDosenStats() {
   await requireUserOrThrow("DOSEN");
 
-  const [menungguAcc, disetujui] = await Promise.all([
+  const [menungguAcc, disetujui, ditolak] = await Promise.all([
     db.skrining.count({ where: { status: "MENUNGGU_ACC" } }),
     db.skrining.count({ where: { status: "SELESAI" } }),
+    db.skrining.count({ where: DITOLAK_WHERE }),
   ]);
 
-  return { menungguAcc, disetujui, total: menungguAcc + disetujui };
+  return {
+    menungguAcc,
+    disetujui,
+    ditolak,
+    total: menungguAcc + disetujui + ditolak,
+  };
 }
 
 export async function getKasusDetailForDosen(id: string) {
@@ -110,7 +127,10 @@ export async function getKasusDetailForDosen(id: string) {
       keluhan: { orderBy: { urutan: "asc" } },
       kasus: true,
       edukasi: {
-        include: { koas: { select: { name: true } } },
+        include: {
+          koas: { select: { name: true } },
+          dosen: { select: { name: true } },
+        },
       },
     },
   });

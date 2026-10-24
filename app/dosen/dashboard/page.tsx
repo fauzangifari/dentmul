@@ -9,7 +9,13 @@ import {
 import { prioritasEfektif } from "@/features/skrining/anamnesa";
 import { EmptyState } from "@/components/empty-state";
 import Link from "next/link";
-import { SearchX, Hourglass, CheckCircle2, ClipboardList } from "lucide-react";
+import {
+  SearchX,
+  Hourglass,
+  CheckCircle2,
+  XCircle,
+  ClipboardList,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export const metadata = {
@@ -39,6 +45,7 @@ export default async function DosenDashboard({
   const { skrinings, total, totalPages, status } = list;
   const hasSearch = Boolean(params.search);
   const isSelesaiView = status === "SELESAI";
+  const isDitolakView = status === "DITOLAK";
 
   const items: KasusItem[] = skrinings.map((s) => ({
     id: s.id,
@@ -47,7 +54,8 @@ export default async function DosenDashboard({
     jenisKelamin: s.user.jenisKelamin,
     keluhanUtama: s.keluhanUtama,
     createdAt: s.createdAt,
-    status: s.status,
+    status:
+      s.status === "DITINJAU" && s.edukasi?.reviewedAt ? "DITOLAK" : s.status,
     kategori: s.kasus?.kategori ?? null,
     skalaNyeri: s.skalaNyeri,
     prioritas: prioritasEfektif(s),
@@ -68,13 +76,13 @@ export default async function DosenDashboard({
         </p>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         {/* Menunggu ACC — primary */}
         <Link
           href="/dosen/dashboard"
           className={cn(
             "group relative col-span-2 overflow-hidden rounded-2xl bg-gradient-to-br from-primary to-[#23387e] p-5 text-primary-foreground shadow-md transition-transform hover:-translate-y-0.5 sm:col-span-1",
-            !isSelesaiView &&
+            status === "MENUNGGU_ACC" &&
               "ring-2 ring-primary ring-offset-2 ring-offset-background"
           )}
         >
@@ -106,6 +114,16 @@ export default async function DosenDashboard({
         />
 
         <StatCard
+          href="/dosen/dashboard?status=DITOLAK"
+          label="Ditolak"
+          value={stats.ditolak}
+          icon={XCircle}
+          iconBg="bg-red-500/10"
+          iconText="text-red-600 dark:text-red-400"
+          active={isDitolakView}
+        />
+
+        <StatCard
           label="Total Diproses"
           value={stats.total}
           icon={ClipboardList}
@@ -128,6 +146,11 @@ export default async function DosenDashboard({
             title="Belum ada yang disetujui"
             description="Edukasi yang sudah Anda atau dosen lain setujui akan muncul di sini."
           />
+        ) : isDitolakView ? (
+          <EmptyState
+            title="Tidak ada yang ditolak"
+            description="Edukasi yang Anda atau dosen lain tolak akan muncul di sini sampai DGM mengirim revisinya."
+          />
         ) : (
           <EmptyState
             title="Antrean kosong"
@@ -138,7 +161,11 @@ export default async function DosenDashboard({
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-base font-semibold text-foreground">
-              {isSelesaiView ? "Edukasi Disetujui" : "Antrean Persetujuan"}
+              {isSelesaiView
+                ? "Edukasi Disetujui"
+                : isDitolakView
+                  ? "Edukasi Ditolak"
+                  : "Antrean Persetujuan"}
             </h2>
             <p className="text-sm text-muted-foreground">
               {items.length} dari {total}

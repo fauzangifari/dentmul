@@ -1,4 +1,4 @@
-import { Clock, Eye, Hourglass, CheckCircle2, HelpCircle } from "lucide-react";
+import { Clock, Eye, Hourglass, CheckCircle2, XCircle, HelpCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export type SkriningStatus = "MENUNGGU" | "DITINJAU" | "MENUNGGU_ACC" | "SELESAI";
@@ -35,6 +35,13 @@ const STATUS_CONFIG: Record<
     icon: CheckCircle2,
     bgClass: "bg-emerald-100 dark:bg-emerald-500/10",
     textClass: "text-emerald-700 dark:text-emerald-500",
+  },
+  // Bukan StatusSkrining: DITINJAU yang edukasinya ditolak dosen.
+  DITOLAK: {
+    label: "Ditolak",
+    icon: XCircle,
+    bgClass: "bg-red-100 dark:bg-red-500/10",
+    textClass: "text-red-700 dark:text-red-400",
   },
 };
 

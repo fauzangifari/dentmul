@@ -20,6 +20,7 @@ import {
   User,
   ShieldCheck,
   CheckCircle2,
+  XCircle,
   Info,
   Star,
 } from "lucide-react";
@@ -71,6 +72,10 @@ export default async function DosenKasusPage({
   const isMenungguAcc = skrining.status === "MENUNGGU_ACC";
   const isSelesai = skrining.status === "SELESAI";
   const edukasi = skrining.edukasi;
+  // Sama seperti di halaman koas: edukasi yang sudah diproses dosen tapi kasus
+  // kembali DITINJAU berarti ditolak dan menunggu revisi.
+  const isDitolak =
+    skrining.status === "DITINJAU" && Boolean(edukasi?.reviewedAt);
 
   return (
     <div className="space-y-6">
@@ -144,6 +149,48 @@ export default async function DosenKasusPage({
                   {edukasi.reviewedAt && (
                     <p className="text-xs text-muted-foreground">
                       Disetujui pada{" "}
+                      {format(edukasi.reviewedAt, "dd MMMM yyyy, HH:mm", {
+                        locale: localeId,
+                      })}
+                    </p>
+                  )}
+                </div>
+              ) : isDitolak && edukasi ? (
+                <div className="space-y-4 text-sm">
+                  <div className="flex items-start gap-2 rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-destructive">
+                    <XCircle size={18} className="mt-0.5 shrink-0" />
+                    <span>
+                      Edukasi ini ditolak dan dikembalikan ke DGM. Menunggu
+                      revisi sebelum bisa ditinjau ulang.
+                    </span>
+                  </div>
+                  <Field label="Ditolak oleh" value={edukasi.dosen?.name ?? "Dosen"} />
+                  <div>
+                    <span className="mb-1 block text-xs font-medium text-muted-foreground">
+                      Alasan Penolakan
+                    </span>
+                    {edukasi.catatanDosen ? (
+                      <p className="rounded-lg border border-destructive/20 bg-background p-3 font-medium whitespace-pre-wrap text-foreground">
+                        {edukasi.catatanDosen}
+                      </p>
+                    ) : (
+                      <p className="text-muted-foreground italic">
+                        Tidak ada alasan yang dicatat.
+                      </p>
+                    )}
+                  </div>
+                  <Field label="Diajukan oleh" value={edukasi.koas?.name ?? "Koas"} />
+                  <div>
+                    <span className="mb-1 block text-xs font-medium text-muted-foreground">
+                      Pesan Edukasi yang Ditolak
+                    </span>
+                    <p className="rounded-lg border border-border bg-background p-3 font-medium whitespace-pre-wrap text-foreground">
+                      {edukasi.konten}
+                    </p>
+                  </div>
+                  {edukasi.reviewedAt && (
+                    <p className="text-xs text-muted-foreground">
+                      Ditolak pada{" "}
                       {format(edukasi.reviewedAt, "dd MMMM yyyy, HH:mm", {
                         locale: localeId,
                       })}
