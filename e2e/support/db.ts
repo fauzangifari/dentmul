@@ -53,6 +53,7 @@ export type UserTersimpan = {
   role: string;
   nik: string;
   noTelepon: string;
+  jenisKelamin: string | null;
   password: string;
   isActive: boolean;
 };
@@ -60,7 +61,7 @@ export type UserTersimpan = {
 export function ambilUser(email: string) {
   return denganKoneksi(async (db) => {
     const { rows } = await db.query<UserTersimpan>(
-      `SELECT id, name, role, nik, "noTelepon", password, "isActive"
+      `SELECT id, name, role, nik, "noTelepon", "jenisKelamin", password, "isActive"
          FROM "User" WHERE email = $1`,
       [email]
     );

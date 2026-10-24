@@ -5,12 +5,35 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import Link from "next/link"
-import { User, IdCard, Mail, Phone, Lock, Calendar, MapPin, AlertCircle, ArrowRight } from "lucide-react"
+import {
+  User,
+  IdCard,
+  Mail,
+  Phone,
+  Lock,
+  Calendar,
+  Mars,
+  Venus,
+  MapPin,
+  AlertCircle,
+  ArrowRight,
+  type LucideIcon,
+} from "lucide-react"
 import { RegisterSchema } from "@/features/auth/schema"
 import { registerUser, loginUser } from "@/features/auth/actions"
-import { AuthField, authInputClass } from "../_components/auth-field"
+import { cn } from "@/lib/utils"
+import { AuthField, authInputClass, authLabelClass } from "../_components/auth-field"
 
 type RegisterFormValues = z.infer<typeof RegisterSchema>
+
+const JENIS_KELAMIN_OPTIONS = [
+  { value: "LAKI_LAKI", label: "Laki-laki", icon: Mars },
+  { value: "PEREMPUAN", label: "Perempuan", icon: Venus },
+] as const satisfies readonly {
+  value: RegisterFormValues["jenisKelamin"]
+  label: string
+  icon: LucideIcon
+}[]
 
 // "+" hanya bermakna di awal nomor, sisanya harus angka.
 const sanitizePhone = (value: string) =>
@@ -148,6 +171,47 @@ export default function RegisterPage() {
             className={authInputClass}
           />
         </AuthField>
+
+        <fieldset
+          role="radiogroup"
+          aria-invalid={!!errors.jenisKelamin}
+          disabled={isPending}
+          className="space-y-1.5"
+        >
+          {/* legend berupa blok (label AuthField inline) — mb-0.5 menyamakan
+              jarak ke kontrol dengan field lain. */}
+          <legend className={cn(authLabelClass, "mb-0.5")}>Jenis Kelamin</legend>
+          <div className="grid grid-cols-2 gap-3">
+            {JENIS_KELAMIN_OPTIONS.map(({ value, label, icon: Icon }) => (
+              <label
+                key={value}
+                className={cn(
+                  "group relative flex h-11 items-center justify-center gap-2 rounded-xl border border-input bg-muted/40 text-sm text-foreground",
+                  "transition-[background-color,border-color,box-shadow] duration-200 hover:bg-muted/70",
+                  "has-checked:border-ring has-checked:bg-primary/10 has-checked:font-semibold has-checked:text-primary",
+                  "has-focus-visible:ring-3 has-focus-visible:ring-ring/25",
+                  "has-disabled:opacity-50",
+                  errors.jenisKelamin && "border-destructive ring-3 ring-destructive/20",
+                )}
+              >
+                <input
+                  {...form.register("jenisKelamin")}
+                  type="radio"
+                  value={value}
+                  // Transparan menutupi seluruh kartu: klik & fokus langsung ke radio-nya.
+                  className="absolute inset-0 cursor-pointer rounded-xl opacity-0 disabled:cursor-not-allowed"
+                />
+                <Icon className="h-[1.1rem] w-[1.1rem] text-muted-foreground/70 group-has-checked:text-primary" />
+                {label}
+              </label>
+            ))}
+          </div>
+          {errors.jenisKelamin && (
+            <p className="text-xs font-medium text-destructive">
+              {errors.jenisKelamin.message}
+            </p>
+          )}
+        </fieldset>
 
         <AuthField
           label="Alamat Domisili"

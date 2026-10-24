@@ -66,6 +66,7 @@ test("pasien baru mendaftar, masuk, mengirim skrining, dan melihat hasilnya", as
     nik: `99${Date.now()}${testInfo.project.name === "ponsel" ? 2 : 1}`,
     noTelepon: `0812${String(Date.now()).slice(-8)}`,
     tanggalLahir: "1995-04-17",
+    jenisKelamin: { value: "PEREMPUAN", label: "Perempuan" },
     alamat: "Jl. Uji Coba No. 1, Samarinda",
   };
 
@@ -82,6 +83,7 @@ test("pasien baru mendaftar, masuk, mengirim skrining, dan melihat hasilnya", as
     await page.locator('[name="noTelepon"]').fill(akun.noTelepon);
     await page.locator('[name="password"]').fill(akun.password);
     await page.locator('[name="tanggalLahir"]').fill(akun.tanggalLahir);
+    await pilih(page, "Jenis Kelamin", akun.jenisKelamin.label);
     await page.locator('[name="alamat"]').fill(akun.alamat);
     await page.getByRole("button", { name: "Daftar sekarang" }).click();
   };
@@ -91,6 +93,7 @@ test("pasien baru mendaftar, masuk, mengirim skrining, dan melihat hasilnya", as
     await page.getByRole("button", { name: "Daftar sekarang" }).click();
     await expect(page.getByText("Nama minimal 3 karakter")).toBeVisible();
     await expect(page.getByText("NIK harus tepat 16 digit angka")).toBeVisible();
+    await expect(page.getByText("Jenis kelamin wajib dipilih")).toBeVisible();
 
     await isiFormDaftar();
     await expect(page).toHaveURL(/\/pasien\/dashboard$/);
@@ -102,6 +105,7 @@ test("pasien baru mendaftar, masuk, mengirim skrining, dan melihat hasilnya", as
       role: "PASIEN",
       nik: akun.nik,
       noTelepon: akun.noTelepon,
+      jenisKelamin: akun.jenisKelamin.value,
       isActive: true,
     });
     expect(user?.password).toMatch(/^\$2[aby]\$/); // tersimpan sebagai hash bcrypt

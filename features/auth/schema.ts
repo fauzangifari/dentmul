@@ -1,4 +1,5 @@
 import { z } from "zod"
+import { JENIS_KELAMIN_VALUES } from "@/features/pasien/schema"
 
 export const RegisterSchema = z.object({
   name: z.string().min(3, "Nama minimal 3 karakter"),
@@ -19,6 +20,7 @@ export const RegisterSchema = z.object({
     .refine((v) => new Date(v) <= new Date(), "Tanggal lahir tidak boleh di masa depan")
     // Batas bawah wajar untuk menangkap salah ketik tahun (mis. 0999)
     .refine((v) => new Date(v) >= new Date("1900-01-01"), "Tanggal lahir tidak valid"),
+  jenisKelamin: z.enum(JENIS_KELAMIN_VALUES, { error: "Jenis kelamin wajib dipilih" }),
   alamat: z.string().min(5, "Alamat terlalu pendek"),
 })
 

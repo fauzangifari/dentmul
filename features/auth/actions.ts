@@ -16,7 +16,8 @@ export async function registerUser(values: z.infer<typeof RegisterSchema>) {
       return { error: "Data tidak valid!" }
     }
 
-    const { email, password, name, nik, noTelepon, tanggalLahir, alamat } = validatedFields.data
+    const { email, password, name, nik, noTelepon, tanggalLahir, jenisKelamin, alamat } =
+      validatedFields.data
 
     const existingUser = await db.user.findUnique({
       where: { email }
@@ -44,6 +45,7 @@ export async function registerUser(values: z.infer<typeof RegisterSchema>) {
         nik,
         noTelepon,
         tanggalLahir: new Date(tanggalLahir),
+        jenisKelamin,
         alamat,
         role: "PASIEN" // Default role for public registration
       }

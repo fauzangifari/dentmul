@@ -15,6 +15,9 @@ export const authInputClass =
   "aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 " +
   "disabled:cursor-not-allowed disabled:opacity-50"
 
+export const authLabelClass =
+  "font-mono text-[0.68rem] font-medium uppercase tracking-[0.15em] text-muted-foreground"
+
 export function AuthField({
   label,
   icon: Icon,
@@ -30,9 +33,7 @@ export function AuthField({
 }) {
   return (
     <div className="space-y-1.5">
-      <label className="font-mono text-[0.68rem] font-medium uppercase tracking-[0.15em] text-muted-foreground">
-        {label}
-      </label>
+      <label className={authLabelClass}>{label}</label>
       <div className="relative">
         <div
           className={cn(
