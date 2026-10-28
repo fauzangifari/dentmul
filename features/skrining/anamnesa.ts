@@ -478,64 +478,69 @@ export function tandaBahayaLabels(d: Pick<AnamnesaData, "tandaBahaya">) {
   );
 }
 
-/** Paragraf "Ringkasan otomatis" untuk koas/dosen (tidak disimpan di DB). */
-export function buildRingkasan(d: AnamnesaData) {
+export type RingkasanPoin = { label: string; value: string };
+
+/** Poin-poin "Ringkasan otomatis" untuk koas/dosen (tidak disimpan di DB). */
+export function buildRingkasan(d: AnamnesaData): RingkasanPoin[] {
   const [utama, ...lain] = d.keluhan;
-  if (!utama) return "";
-  const s: string[] = [];
+  if (!utama) return [];
+  const poin: RingkasanPoin[] = [];
 
   const jenis = joinDan(jenisRingkasan(utama));
-  let kalimat = `Keluhan utama ${jenis ? `${jenis} ` : ""}pada ${lokasiKlinis(utama)}`;
+  poin.push({ label: "Keluhan utama", value: jenis || "-" });
+  poin.push({ label: "Regio gigi", value: lokasiKlinis(utama) });
+
+  const durasiBagian: string[] = [];
   const durasi = formatDurasi(d.durasiAngka, d.durasiSatuan);
-  if (durasi) kalimat += ` sejak ${durasi} yang lalu`;
-  if (d.onset && d.onset !== "TIDAK_INGAT") kalimat += `, onset ${lower(labelOf(ONSET_OPTIONS, d.onset))}`;
-  if (d.perkembangan) kalimat += `, ${lower(labelOf(PERKEMBANGAN_OPTIONS, d.perkembangan))}`;
-  s.push(`${kalimat}.`);
+  if (durasi) durasiBagian.push(`sejak ${durasi} yang lalu`);
+  if (d.onset && d.onset !== "TIDAK_INGAT") durasiBagian.push(`onset ${lower(labelOf(ONSET_OPTIONS, d.onset))}`);
+  if (d.perkembangan) durasiBagian.push(lower(labelOf(PERKEMBANGAN_OPTIONS, d.perkembangan)));
+  if (durasiBagian.length) poin.push({ label: "Durasi", value: durasiBagian.join(", ") });
 
   if (d.skalaNyeri) {
     const detail = [lower(karakterNyeri(d))];
     if (utama.sebaran !== "SATU_TITIK") detail.push(lower(labelOf(SEBARAN_OPTIONS, utama.sebaran)));
     const nyeri = detail.filter(Boolean).join(", ");
-    if (nyeri) s.push(`Nyeri ${nyeri}.`);
-    s.push(`Skala nyeri ${d.skalaNyeri}/10.`);
+    poin.push({
+      label: "Skala nyeri",
+      value: `${d.skalaNyeri}/10${nyeri ? `, ${nyeri}` : ""}`,
+    });
   } else {
-    s.push("Tidak ada rasa sakit (skala 0/10).");
-    if (utama.sebaran !== "SATU_TITIK") {
-      s.push(`Keluhan ${lower(labelOf(SEBARAN_OPTIONS, utama.sebaran))}.`);
-    }
+    const sebaran =
+      utama.sebaran !== "SATU_TITIK" ? lower(labelOf(SEBARAN_OPTIONS, utama.sebaran)) : "";
+    poin.push({
+      label: "Skala nyeri",
+      value: `0/10 (tidak ada rasa sakit)${sebaran ? `, ${sebaran}` : ""}`,
+    });
   }
 
   const gejala = gejalaLainLabels(d).map(lower);
-  if (gejala.length) s.push(`Disertai ${joinDan(gejala)}.`);
+  if (gejala.length) poin.push({ label: "Gejala lain", value: joinDan(gejala) });
 
   if (d.riwayatPerawatan.length) {
     const r = riwayatPerawatanText(d);
-    s.push(
-      d.riwayatPerawatan.includes("TIDAK_TAHU")
-        ? "Riwayat perawatan tidak diketahui."
-        : d.riwayatPerawatan.includes("BELUM_PERNAH")
-          ? `${r}.`
-          : `Riwayat perawatan: ${lower(r)}.`
-    );
+    poin.push({
+      label: "Riwayat perawatan",
+      value: d.riwayatPerawatan.includes("TIDAK_TAHU") ? "Tidak diketahui" : r,
+    });
   }
-  if (d.dampak.length) s.push(`${dampakText(d)}.`);
-  if (d.upaya.length) {
-    const u = upayaText(d);
-    // Cek kodenya, bukan teksnya: keterangan obat bisa saja diawali "Belum".
-    s.push(d.upaya.includes("BELUM") ? `${u}.` : `Upaya: ${u}.`);
-  }
+  if (d.dampak.length) poin.push({ label: "Dampak", value: dampakText(d) });
+  if (d.upaya.length) poin.push({ label: "Upaya", value: upayaText(d) });
 
   const bahaya = tandaBahayaLabels(d);
-  s.push(bahaya.length ? `TANDA BAHAYA: ${bahaya.join(", ")}.` : "Tanda bahaya tidak ada.");
+  poin.push({
+    label: "Tanda bahaya",
+    value: bahaya.length ? bahaya.join(", ") : "Tidak ada",
+  });
 
   if (lain.length) {
     const daftar = lain.map((k) => {
       const jenisLain = joinDan(jenisRingkasan(k));
       return `${jenisLain ? `${jenisLain} ` : ""}pada ${lokasiKlinis(k)}`;
     });
-    s.push(`Keluhan lain: ${daftar.join("; ")}.`);
+    poin.push({ label: "Keluhan lain", value: daftar.join("; ") });
   }
-  return s.join(" ");
+  return poin;
 }
 
 /** Jenis keluhan untuk kalimat ringkasan: label opsi dikecilkan, isian bebas apa adanya. */

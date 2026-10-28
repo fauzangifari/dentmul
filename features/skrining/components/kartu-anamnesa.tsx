@@ -114,9 +114,13 @@ export function KartuAnamnesa({
           <span className="text-xs font-semibold tracking-wider text-primary">
             RINGKASAN OTOMATIS
           </span>
-          <p className="text-[15px] leading-relaxed text-foreground">
-            {buildRingkasan(data)}
-          </p>
+          <div className="space-y-1 text-[15px] leading-relaxed text-foreground">
+            {buildRingkasan(data).map((poin, i) => (
+              <p key={i}>
+                <span className="font-semibold">{poin.label}:</span> {poin.value}
+              </p>
+            ))}
+          </div>
         </div>
       )}
 
