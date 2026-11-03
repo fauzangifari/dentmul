@@ -53,7 +53,7 @@ export function Question({
 const chipBase =
   "min-h-11 border-[1.5px] px-4 py-2 text-sm transition-colors outline-none focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50";
 
-function chipClass(selected: boolean, shape: "pill" | "tile", invalid?: boolean) {
+export function chipClass(selected: boolean, shape: "pill" | "tile", invalid?: boolean) {
   return cn(
     chipBase,
     shape === "pill" ? "rounded-full" : "rounded-xl text-left",

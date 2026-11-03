@@ -148,6 +148,10 @@ export const KeluhanSchema = z
 const jawabTandaBahaya = z.enum(["YA", "TIDAK"], { error: "Jawab Ya atau Tidak" });
 
 export const SkriningSchema = z.object({
+  // Waktu (ISO, UTC) pasien menekan "Setuju dan Lanjutkan" di layar
+  // Persetujuan Penggunaan sebelum langkah 1 — tanpa ini skrining ditolak.
+  persetujuan: z.iso.datetime({ error: "Anda perlu menyetujui ketentuan penggunaan" }),
+
   // Langkah 1
   pengisi: kode(PENGISI_OPTIONS, "Pilih siapa yang mengisi formulir"),
   keluhan: z

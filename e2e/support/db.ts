@@ -94,6 +94,7 @@ export type SkriningTersimpan = {
   keteranganObat: string | null;
   tandaBahaya: string[];
   riwayatPenyakit: string | null;
+  persetujuanAt: Date | null;
   keluhan: KeluhanTersimpan[];
   jumlahFoto: number;
 };
@@ -106,6 +107,9 @@ export function ambilSkriningTerbaru(email: string) {
               s."keluhanUtama", s."durasiKeluhan", s."skalaNyeri",
               s."durasiAngka", s."durasiSatuan", s.upaya, s."keteranganObat",
               s."tandaBahaya", s."riwayatPenyakit",
+              -- Prisma menyimpan DateTime sebagai UTC di kolom tanpa zona;
+              -- tanpa ini node-pg membacanya sebagai waktu lokal.
+              s."persetujuanAt" AT TIME ZONE 'UTC' AS "persetujuanAt",
               COALESCE((
                 SELECT json_agg(json_build_object(
                          'urutan', k.urutan, 'jenis', k.jenis, 'area', k.area,

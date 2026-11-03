@@ -14,6 +14,16 @@ import {
 } from "@/features/skrining/anamnesa";
 import { getVerifiedUser } from "@/lib/auth-guard";
 
+/**
+ * Waktu persetujuan dikirim browser (saat klik "Setuju"). Jam perangkat bisa
+ * maju, jadi tidak boleh melewati waktu server — persetujuan selalu sebelum kirim.
+ */
+function waktuPersetujuan(iso: string) {
+  const sekarang = new Date();
+  const disetujui = new Date(iso);
+  return disetujui < sekarang ? disetujui : sekarang;
+}
+
 export async function submitSkrining(values: SkriningFormValues) {
   try {
     const pasien = await getVerifiedUser("PASIEN");
@@ -37,6 +47,7 @@ export async function submitSkrining(values: SkriningFormValues) {
         versiForm: 2,
         pengisi: data.pengisi,
         prioritas: hitungPrioritas({ ...anamnesa, keluhan }),
+        persetujuanAt: waktuPersetujuan(data.persetujuan),
 
         // Kolom lama diisi otomatis agar daftar kasus, pencarian, dan
         // tampilan lain yang belum mengenal v2 tetap berfungsi.

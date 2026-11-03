@@ -70,6 +70,9 @@ test("pasien baru mendaftar, masuk, mengirim skrining, dan melihat hasilnya", as
     alamat: "Jl. Uji Coba No. 1, Samarinda",
   };
 
+  // Rentang waktu klik "Setuju dan Lanjutkan" — dibandingkan dengan isi DB.
+  let jendelaSetuju: [number, number] = [NaN, NaN];
+
   await test.step("halaman pasien tertutup sebelum login", async () => {
     await page.goto("/pasien/skrining");
     await expect(page).toHaveURL(/\/login\?callbackUrl=%2Fpasien%2Fskrining/);
@@ -134,7 +137,20 @@ test("pasien baru mendaftar, masuk, mengirim skrining, dan melihat hasilnya", as
   await test.step("langkah 1: jenis dan lokasi keluhan", async () => {
     await page.getByRole("link", { name: "Mulai Skrining" }).first().click();
     await expect(page).toHaveURL(/\/pasien\/skrining$/);
+
+    // Persetujuan Penggunaan harus disetujui sebelum formulir tampil.
+    await judulLangkah(page, "Persetujuan Penggunaan");
+    const setujuLanjut = page.getByRole("button", { name: "Setuju dan Lanjutkan" });
+    await expect(setujuLanjut).toBeDisabled();
+    await page
+      .getByRole("checkbox", { name: "Saya telah membaca dan menyetujui ketentuan di atas." })
+      .check();
+    const sebelumSetuju = Date.now();
+    await setujuLanjut.click();
     await judulLangkah(page, "Jenis dan Lokasi Keluhan");
+    jendelaSetuju = [sebelumSetuju, Date.now()];
+    // Fokus pindah ke kartu formulir, bukan hilang ke <body>.
+    await expect(page.getByRole("region", { name: /^Langkah 1 dari 5/ })).toBeFocused();
 
     // Validasi: belum ada yang diisi.
     await selanjutnya(page);
@@ -256,6 +272,10 @@ test("pasien baru mendaftar, masuk, mengirim skrining, dan melihat hasilnya", as
       riwayatPenyakit: "Hipertensi ringan",
       jumlahFoto: 1,
     });
+    // Yang tercatat adalah waktu klik "Setuju" (toleransi 1 detik), bukan waktu kirim.
+    const disetujui = s?.persetujuanAt?.getTime() ?? NaN;
+    expect(disetujui).toBeGreaterThanOrEqual(jendelaSetuju[0] - 1000);
+    expect(disetujui).toBeLessThanOrEqual(jendelaSetuju[1] + 1000);
     expect(s?.keluhan).toMatchObject([
       { urutan: 0, jenis: ["GIGI_SAKIT"], area: "GIGI", gigi: [46], sebaran: "MENJALAR", cerita: CERITA_UTAMA },
       { urutan: 1, jenis: ["SARIAWAN"], area: "LIDAH", titikJaringanLunak: "LIDAH", gigi: [], sebaran: "SATU_TITIK", cerita: CERITA_LAIN },

@@ -1,7 +1,7 @@
 "use client";
 
-import { useRef, useState } from "react";
-import { FormProvider, useForm, type FieldErrors } from "react-hook-form";
+import { useEffect, useRef, useState } from "react";
+import { FormProvider, useForm, useWatch, type FieldErrors } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   BATAS_RIWAYAT_MEDIS,
@@ -22,6 +22,7 @@ import { PhotoUploader } from "@/features/skrining/components/photo-uploader";
 import { StepLokasi } from "@/features/skrining/components/steps/step-lokasi";
 import { StepDetail } from "@/features/skrining/components/steps/step-detail";
 import { StepReview } from "@/features/skrining/components/steps/step-review";
+import { PersetujuanPenggunaan } from "@/features/skrining/components/persetujuan-penggunaan";
 import {
   CheckCircle,
   ChevronRight,
@@ -126,9 +127,32 @@ export default function SkriningPage() {
     mode: "onTouched",
   });
 
+  // Persetujuan Penggunaan wajib sebelum formulir tampil. Satu sumber state:
+  // nilai form `persetujuan` (waktu klik "Setuju"); bila hilang/tidak valid,
+  // layar persetujuan otomatis tampil lagi.
+  const persetujuan = useWatch({ control: form.control, name: "persetujuan" });
+  const setuju = SkriningSchema.shape.persetujuan.safeParse(persetujuan).success;
+
+  // Setelah setuju, tombol yang sedang difokus hilang — pindahkan fokus ke
+  // kartu formulir agar pengguna keyboard/pembaca layar tidak tersesat.
+  const kartuRef = useRef<HTMLDivElement>(null);
+  const fokusKeKartu = useRef(false);
+  useEffect(() => {
+    if (setuju && fokusKeKartu.current) {
+      fokusKeKartu.current = false;
+      kartuRef.current?.focus({ preventScroll: true });
+    }
+  }, [setuju]);
+
   const goToStep = (step: number) => {
     setCurrentStep(step);
     window.scrollTo(0, 0);
+  };
+
+  const mulaiSetelahSetuju = () => {
+    fokusKeKartu.current = true;
+    form.setValue("persetujuan", new Date().toISOString());
+    goToStep(currentStep);
   };
 
   const processNext = async () => {
@@ -207,6 +231,11 @@ export default function SkriningPage() {
   const lewatiFoto = () => router.push("/pasien/riwayat?success=1");
 
   const onInvalid = (errors: FieldErrors<SkriningFormInput>) => {
+    if (errors.persetujuan) {
+      // Layar persetujuan sudah tampil lagi (lihat `setuju`).
+      toast.error("Setujui ketentuan penggunaan terlebih dahulu.");
+      return;
+    }
     toast.error("Masih ada isian yang perlu dilengkapi.");
     goToStep(firstStepWithError(errors));
     scrollToFirstError();
@@ -224,165 +253,186 @@ export default function SkriningPage() {
         </div>
 
         {/* Step Indicator */}
-        <div>
-          <div className="relative mb-3 flex items-center justify-between">
-            <div className="absolute top-1/2 left-0 -z-10 h-1 w-full -translate-y-1/2 bg-border" />
-            <div
-              className="absolute top-1/2 left-0 -z-10 h-1 -translate-y-1/2 bg-primary transition-all duration-300"
-              style={{ width: `${(currentStep / (STEPS.length - 1)) * 100}%` }}
-            />
-            {STEPS.map((step, idx) => (
-              <div key={step} className="flex flex-col items-center gap-2">
-                <div
-                  className={`flex h-11 w-11 items-center justify-center rounded-full border-2 text-sm font-bold transition-colors ${
-                    idx < currentStep
-                      ? "border-primary bg-primary text-primary-foreground"
-                      : idx === currentStep
-                      ? "border-primary bg-background text-primary"
-                      : "border-border bg-background text-muted-foreground"
-                  }`}
-                >
-                  {idx < currentStep ? <CheckCircle size={20} /> : idx + 1}
+        {setuju && (
+          <div>
+            <div className="relative mb-3 flex items-center justify-between">
+              <div className="absolute top-1/2 left-0 -z-10 h-1 w-full -translate-y-1/2 bg-border" />
+              <div
+                className="absolute top-1/2 left-0 -z-10 h-1 -translate-y-1/2 bg-primary transition-all duration-300"
+                style={{ width: `${(currentStep / (STEPS.length - 1)) * 100}%` }}
+              />
+              {STEPS.map((step, idx) => (
+                <div key={step} className="flex flex-col items-center gap-2">
+                  <div
+                    className={`flex h-11 w-11 items-center justify-center rounded-full border-2 text-sm font-bold transition-colors ${
+                      idx < currentStep
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : idx === currentStep
+                        ? "border-primary bg-background text-primary"
+                        : "border-border bg-background text-muted-foreground"
+                    }`}
+                  >
+                    {idx < currentStep ? <CheckCircle size={20} /> : idx + 1}
+                  </div>
+                  <span
+                    className={`hidden text-xs font-medium sm:block ${
+                      idx <= currentStep ? "text-primary" : "text-muted-foreground"
+                    }`}
+                  >
+                    {step}
+                  </span>
                 </div>
-                <span
-                  className={`hidden text-xs font-medium sm:block ${
-                    idx <= currentStep ? "text-primary" : "text-muted-foreground"
-                  }`}
-                >
-                  {step}
-                </span>
-              </div>
-            ))}
+              ))}
+            </div>
+            {/* Label langkah untuk mobile */}
+            <p className="text-center text-sm font-semibold text-primary sm:hidden">
+              Langkah {currentStep + 1} dari {STEPS.length}: {STEPS[currentStep]}
+            </p>
           </div>
-          {/* Label langkah untuk mobile */}
-          <p className="text-center text-sm font-semibold text-primary sm:hidden">
-            Langkah {currentStep + 1} dari {STEPS.length}: {STEPS[currentStep]}
-          </p>
-        </div>
+        )}
 
         {/* Form Card */}
         <div
           data-skrining-card
-          className="rounded-2xl border border-border/50 bg-card p-5 shadow-sm md:p-8"
+          ref={kartuRef}
+          tabIndex={-1}
+          role="region"
+          aria-label={
+            setuju
+              ? `Langkah ${currentStep + 1} dari ${STEPS.length}: ${STEPS[currentStep]}`
+              : "Persetujuan Penggunaan"
+          }
+          className="rounded-2xl border border-border/50 bg-card p-5 shadow-sm outline-none md:p-8"
         >
-          {error && (
-            <div className="mb-6 space-y-3 rounded-lg border border-destructive/20 bg-destructive/10 p-4 text-sm font-medium text-destructive">
-              <p>{error}</p>
-              {savedId && (
-                <Button type="button" variant="outline" size="sm" onClick={lewatiFoto}>
-                  Lewati foto, lihat riwayat
-                </Button>
+          {!setuju ? (
+            <div className="space-y-6">
+              <StepHeading>Persetujuan Penggunaan</StepHeading>
+              <PersetujuanPenggunaan onSetuju={mulaiSetelahSetuju} />
+            </div>
+          ) : (
+            <>
+              {error && (
+                <div className="mb-6 space-y-3 rounded-lg border border-destructive/20 bg-destructive/10 p-4 text-sm font-medium text-destructive">
+                  <p>{error}</p>
+                  {savedId && (
+                    <Button type="button" variant="outline" size="sm" onClick={lewatiFoto}>
+                      Lewati foto, lihat riwayat
+                    </Button>
+                  )}
+                </div>
               )}
-            </div>
-          )}
 
-          {currentStep === 0 && <StepLokasi />}
+              {currentStep === 0 && <StepLokasi />}
 
-          {currentStep === 1 && <StepDetail onEditLokasi={() => goToStep(0)} />}
+              {currentStep === 1 && <StepDetail onEditLokasi={() => goToStep(0)} />}
 
-          {currentStep === 2 && (
-            <div className="space-y-6">
-              <StepHeading>Riwayat Medis</StepHeading>
-              <WhyBox>
-                Informasi ini membantu dokter memastikan tindakan yang aman untuk
-                kondisi kesehatan Anda. Kosongkan bila tidak ada.
-              </WhyBox>
+              {currentStep === 2 && (
+                <div className="space-y-6">
+                  <StepHeading>Riwayat Medis</StepHeading>
+                  <WhyBox>
+                    Informasi ini membantu dokter memastikan tindakan yang aman untuk
+                    kondisi kesehatan Anda. Kosongkan bila tidak ada.
+                  </WhyBox>
 
-              {RIWAYAT_MEDIS.map(({ name, label, placeholder }) => {
-                const fieldError = form.formState.errors[name]?.message;
-                return (
-                  <div key={name} className="space-y-2">
-                    <Label htmlFor={name} className="text-base">
-                      {label}
-                    </Label>
-                    <Textarea
-                      id={name}
-                      placeholder={placeholder}
-                      maxLength={BATAS_RIWAYAT_MEDIS}
-                      aria-invalid={Boolean(fieldError)}
-                      {...form.register(name)}
-                      className="text-base"
-                    />
-                    {fieldError && (
-                      <p role="alert" className="text-sm font-medium text-destructive">
-                        {fieldError}
-                      </p>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          )}
+                  {RIWAYAT_MEDIS.map(({ name, label, placeholder }) => {
+                    const fieldError = form.formState.errors[name]?.message;
+                    return (
+                      <div key={name} className="space-y-2">
+                        <Label htmlFor={name} className="text-base">
+                          {label}
+                        </Label>
+                        <Textarea
+                          id={name}
+                          placeholder={placeholder}
+                          maxLength={BATAS_RIWAYAT_MEDIS}
+                          aria-invalid={Boolean(fieldError)}
+                          {...form.register(name)}
+                          className="text-base"
+                        />
+                        {fieldError && (
+                          <p role="alert" className="text-sm font-medium text-destructive">
+                            {fieldError}
+                          </p>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
 
-          {currentStep === 3 && (
-            <div className="space-y-6">
-              <StepHeading>Foto Rongga Mulut</StepHeading>
-              <WhyBox>
-                Foto membantu dokter melihat kondisi gigi/mulut Anda lebih jelas.
-                Langkah ini opsional, maksimal 5 foto.
-              </WhyBox>
-              <PhotoUploader
-                files={files}
-                onFilesChange={setFiles}
-                maxFiles={5}
-                lockedFiles={uploadedFiles}
-              />
-            </div>
-          )}
+              {currentStep === 3 && (
+                <div className="space-y-6">
+                  <StepHeading>Foto Rongga Mulut</StepHeading>
+                  <WhyBox>
+                    Foto membantu dokter melihat kondisi gigi/mulut Anda lebih jelas.
+                    Langkah ini opsional, maksimal 5 foto.
+                  </WhyBox>
+                  <PhotoUploader
+                    files={files}
+                    onFilesChange={setFiles}
+                    maxFiles={5}
+                    lockedFiles={uploadedFiles}
+                  />
+                </div>
+              )}
 
-          {currentStep === 4 && (
-            <StepReview
-              fotoCount={files.length}
-              goToStep={goToStep}
-              terkunci={Boolean(savedId)}
-            />
+              {currentStep === 4 && (
+                <StepReview
+                  fotoCount={files.length}
+                  goToStep={goToStep}
+                  terkunci={Boolean(savedId)}
+                />
+              )}
+            </>
           )}
         </div>
 
         {/* Navigation Buttons */}
-        <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:items-center sm:justify-between">
-          <Button
-            type="button"
-            variant="outline"
-            size="lg"
-            onClick={processPrev}
-            // Setelah skrining tersimpan, jawaban tidak bisa diubah lagi.
-            disabled={currentStep === 0 || isSubmitting || (Boolean(savedId) && currentStep !== 4)}
-            className="h-12 w-full text-base sm:w-36"
-          >
-            <ChevronLeft className="mr-1" size={18} /> Kembali
-          </Button>
+        {setuju && (
+          <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:items-center sm:justify-between">
+            <Button
+              type="button"
+              variant="outline"
+              size="lg"
+              onClick={processPrev}
+              // Setelah skrining tersimpan, jawaban tidak bisa diubah lagi.
+              disabled={currentStep === 0 || isSubmitting || (Boolean(savedId) && currentStep !== 4)}
+              className="h-12 w-full text-base sm:w-36"
+            >
+              <ChevronLeft className="mr-1" size={18} /> Kembali
+            </Button>
 
-          {currentStep < STEPS.length - 1 ? (
-            <Button
-              type="button"
-              size="lg"
-              onClick={processNext}
-              className="h-12 w-full text-base sm:w-40"
-            >
-              Selanjutnya <ChevronRight className="ml-1" size={18} />
-            </Button>
-          ) : (
-            <Button
-              type="button"
-              size="lg"
-              onClick={kirim}
-              disabled={isSubmitting}
-              className="h-12 w-full text-base sm:w-48"
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="mr-1 animate-spin" size={18} /> Mengirim...
-                </>
-              ) : (
-                <>
-                  <CheckCircle className="mr-1" size={18} />{" "}
-                  {savedId ? "Unggah ulang foto" : "Kirim Skrining"}
-                </>
-              )}
-            </Button>
-          )}
-        </div>
+            {currentStep < STEPS.length - 1 ? (
+              <Button
+                type="button"
+                size="lg"
+                onClick={processNext}
+                className="h-12 w-full text-base sm:w-40"
+              >
+                Selanjutnya <ChevronRight className="ml-1" size={18} />
+              </Button>
+            ) : (
+              <Button
+                type="button"
+                size="lg"
+                onClick={kirim}
+                disabled={isSubmitting}
+                className="h-12 w-full text-base sm:w-48"
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-1 animate-spin" size={18} /> Mengirim...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle className="mr-1" size={18} />{" "}
+                    {savedId ? "Unggah ulang foto" : "Kirim Skrining"}
+                  </>
+                )}
+              </Button>
+            )}
+          </div>
+        )}
       </div>
     </FormProvider>
   );

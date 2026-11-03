@@ -90,6 +90,11 @@ model Skrining {
   pengisi   PengisiSkrining @default(PASIEN_SENDIRI)
   prioritas PrioritasSkrining @default(RUTIN) // dihitung server saat submit
 
+  // Waktu pasien menekan "Setuju dan Lanjutkan" di layar Persetujuan
+  // Penggunaan (wajib sebelum mengisi form). Dicatat jam browser, dibatasi
+  // tidak melewati waktu kirim. null = skrining sebelum fitur ini.
+  persetujuanAt DateTime?
+
   // Data Keluhan (Anamnesa)
   keluhanUtama    String  // v2: label pendek, contoh "Gigi sakit · 46"
   keluhanTambahan String? // v2: label keluhan ke-2 dst.
