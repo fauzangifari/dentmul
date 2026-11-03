@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import Link from "next/link"
+import { unstable_rethrow } from "next/navigation"
 import {
   User,
   IdCard,
@@ -35,12 +36,25 @@ const JENIS_KELAMIN_OPTIONS = [
   icon: LucideIcon
 }[]
 
+/** True bila `err` adalah redirect/notFound milik Next.js, bukan error aplikasi. */
+function isNavigasiNext(err: unknown) {
+  try {
+    unstable_rethrow(err)
+    return false
+  } catch {
+    return true
+  }
+}
+
 // "+" hanya bermakna di awal nomor, sisanya harus angka.
 const sanitizePhone = (value: string) =>
   (value.startsWith("+") ? "+" : "") + value.replace(/\D/g, "")
 
 export default function RegisterPage() {
   const [error, setError] = useState<string | undefined>("")
+  // Akun tersimpan tapi login otomatis gagal — daftar ulang hanya akan
+  // ditolak "Email sudah digunakan!", jadi arahkan ke halaman login.
+  const [accountCreated, setAccountCreated] = useState(false)
   const [isPending, startTransition] = useTransition()
 
   const form = useForm<RegisterFormValues>({
@@ -57,9 +71,15 @@ export default function RegisterPage() {
     },
   })
 
+  const tandaiAkunDibuat = () => {
+    setAccountCreated(true)
+    setError("Akun Anda sudah dibuat, tetapi gagal masuk otomatis.")
+  }
+
   const onSubmit = (values: RegisterFormValues) => {
     setError("")
     startTransition(async () => {
+      let akunDibuat = false
       try {
         const result = await registerUser(values)
         if (result?.error) {
@@ -67,10 +87,16 @@ export default function RegisterPage() {
           return
         }
         if (result?.success) {
-          await loginUser({ email: values.email, password: values.password })
+          akunDibuat = true
+          const login = await loginUser({ email: values.email, password: values.password })
+          if (login?.error) tandaiAkunDibuat()
         }
-      } catch {
-        // Auth.js signals success by throwing its redirect — nothing to handle.
+      } catch (err) {
+        // Login sukses ditandai Auth.js dengan redirect — Next.js sudah bernavigasi.
+        if (isNavigasiNext(err)) return
+        // Error lain (koneksi putus, DB timeout) tidak boleh hilang diam-diam.
+        if (akunDibuat) tandaiAkunDibuat()
+        else setError("Terjadi kesalahan. Periksa koneksi Anda, lalu coba lagi.")
       }
     })
   }
@@ -231,13 +257,28 @@ export default function RegisterPage() {
         {error && (
           <div className="flex items-start gap-2.5 rounded-xl border border-destructive/25 bg-destructive/10 p-3 text-sm text-destructive">
             <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-            <span>{error}</span>
+            <span>
+              {error}
+              {accountCreated && (
+                <>
+                  {" "}
+                  Silakan{" "}
+                  <Link
+                    href="/login"
+                    className="font-semibold underline underline-offset-4"
+                  >
+                    masuk di sini
+                  </Link>
+                  .
+                </>
+              )}
+            </span>
           </div>
         )}
 
         <button
           type="submit"
-          disabled={isPending}
+          disabled={isPending || accountCreated}
           className="group inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-primary text-sm font-semibold text-primary-foreground shadow-md transition-all hover:bg-primary/90 hover:shadow-lg focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/40 disabled:pointer-events-none disabled:opacity-60"
         >
           {isPending ? "Mendaftarkan…" : "Daftar sekarang"}

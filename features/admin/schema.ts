@@ -1,4 +1,5 @@
 import { z } from "zod"
+import { tanggalLahirSchema } from "@/features/pasien/schema"
 
 export const ROLE_VALUES = ["PASIEN", "KOAS", "DOSEN", "ADMIN"] as const
 export const JENIS_KELAMIN_VALUES = ["LAKI_LAKI", "PEREMPUAN"] as const
@@ -20,6 +21,13 @@ function validateDemografis(
   if (data.nik && !/^\d{16}$/.test(data.nik)) {
     ctx.addIssue({ code: "custom", path: ["nik"], message: "NIK harus 16 digit angka" })
   }
+  // Boleh kosong untuk non-pasien, tetapi bila diisi harus tanggal yang wajar.
+  if (data.tanggalLahir?.trim()) {
+    const cek = tanggalLahirSchema.safeParse(data.tanggalLahir)
+    if (!cek.success) {
+      ctx.addIssue({ code: "custom", path: ["tanggalLahir"], message: cek.error.issues[0].message })
+    }
+  }
   if (data.role !== "PASIEN") return
   if (!data.nik?.trim()) {
     ctx.addIssue({ code: "custom", path: ["nik"], message: "NIK wajib untuk pasien" })
@@ -34,7 +42,7 @@ function validateDemografis(
 
 export const CreateUserSchema = z
   .object({
-    name: z.string().min(3, "Nama minimal 3 karakter"),
+    name: z.string().trim().min(3, "Nama minimal 3 karakter"),
     email: z.string().email("Email tidak valid").transform((v) => v.trim().toLowerCase()),
     password: z.string().min(6, "Password minimal 6 karakter"),
     role: z.enum(ROLE_VALUES),
@@ -44,7 +52,7 @@ export const CreateUserSchema = z
 
 export const UpdateUserSchema = z
   .object({
-    name: z.string().min(3, "Nama minimal 3 karakter"),
+    name: z.string().trim().min(3, "Nama minimal 3 karakter"),
     email: z.string().email("Email tidak valid").transform((v) => v.trim().toLowerCase()),
     role: z.enum(ROLE_VALUES),
     isActive: z.boolean(),
